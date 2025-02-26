@@ -1,0 +1,1671 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider     = "mysql"
+  url          = env("MYSQL_URL")
+  relationMode = "prisma"
+}
+
+model admin {
+  id               Int      @id @unique(map: "id") @default(autoincrement())
+  username         String   @unique(map: "username") @db.VarChar(180)
+  password         String   @db.VarChar(255)
+  ca_access_token  String?  @db.VarChar(255)
+  ca_refresh_token String?  @db.VarChar(255)
+  created_at       DateTime @default(now()) @db.DateTime(0)
+}
+
+model advysor_client_notification {
+  id         Int    @id @default(autoincrement())
+  project_id Int
+  email      String @db.VarChar(255)
+
+  @@index([project_id], map: "project_id")
+}
+
+model ai_capture_location_summary {
+  id                Int      @id @default(autoincrement())
+  summary           Json
+  capture_id        Int?
+  current_image_id  Int?
+  previous_image_id Int?
+  created_at        DateTime @default(now()) @db.DateTime(0)
+
+  @@index([capture_id], map: "ai_capture_location_summary_ibfk_1")
+  @@index([current_image_id], map: "ai_capture_location_summary_ibfk_2")
+  @@index([previous_image_id], map: "ai_capture_location_summary_ibfk_3")
+}
+
+model ai_capture_summary {
+  id         Int      @id @default(autoincrement())
+  summary    String   @db.Text
+  project_id Int?
+  capture_id Int?
+  pair_id    Int?
+  created_at DateTime @default(now()) @db.DateTime(0)
+
+  @@index([capture_id], map: "capture_id")
+  @@index([pair_id], map: "pair_id")
+  @@index([project_id], map: "project_id")
+}
+
+model analysed_rdos {
+  rdo_id               Int
+  rdo_daily_summary_id Int
+
+  @@id([rdo_id, rdo_daily_summary_id])
+  @@index([rdo_daily_summary_id], map: "idx_rdo_daily_summary_id")
+  @@index([rdo_id], map: "idx_rdo_id")
+}
+
+model app {
+  id           Int     @id @default(autoincrement())
+  name         String  @db.VarChar(120)
+  description  String? @db.VarChar(255)
+  logo         String? @db.VarChar(255)
+  app_id       String  @db.VarChar(255)
+  app_secret   String  @db.VarChar(255)
+  redirect_url String  @db.VarChar(255)
+}
+
+model bucket {
+  id         Int      @id @default(autoincrement())
+  name       String   @db.VarChar(160)
+  created_at DateTime @default(now()) @db.DateTime(0)
+  project_id Int      @unique(map: "project_id")
+}
+
+model capture {
+  id            Int       @id @default(autoincrement())
+  created_by    Int?
+  project_id    Int
+  scheduling_id Int?
+  date          DateTime? @db.DateTime(0)
+  created_at    DateTime  @default(now()) @db.DateTime(0)
+
+  @@index([scheduling_id], map: "capture_ibfk_3")
+  @@index([created_by], map: "created_by")
+  @@index([project_id], map: "project_id")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model capture_location {
+  capture_id   Int
+  date         DateTime @db.DateTime(0)
+  floorplan_id Int
+  viewpoint_id Int?
+  image_id     Int
+
+  @@index([capture_id], map: "capture_id")
+  @@index([floorplan_id], map: "floorplan_id")
+  @@index([image_id], map: "image_id")
+  @@index([viewpoint_id], map: "viewpoint_id")
+  @@ignore
+}
+
+model capture_notification_config {
+  id           Int     @id
+  minutes_1    Boolean @default(false)
+  minutes_15   Boolean @default(false)
+  minutes_60   Boolean @default(false)
+  minutes_180  Boolean @default(false)
+  minutes_360  Boolean @default(false)
+  minutes_1440 Boolean @default(false)
+  receive_all  Boolean @default(false)
+}
+
+model checklist_application {
+  id                   Int                          @id @default(autoincrement())
+  status               checklist_application_status @default(IN_PROGRESS)
+  comment              String?                      @db.Text
+  report_url           String?                      @db.VarChar(255)
+  grade                Float?                       @db.Float
+  model_id             Int
+  sector_id            Int?
+  floorplan_id         Int?
+  location_tag_id      Int?
+  applied_by           Int?
+  created_at           DateTime                     @default(now()) @db.Timestamp(0)
+  updated_at           DateTime                     @default(now()) @db.Timestamp(0)
+  code                 Int?
+  previous_application Int?
+  edited_in_web        Boolean?                     @default(false)
+  edited_in_app        Boolean?                     @default(false)
+
+  @@index([location_tag_id], map: "checklist_application_checklist_location_tag_id_fk")
+  @@index([model_id], map: "checklist_application_checklist_model_id_fk")
+  @@index([floorplan_id], map: "checklist_application_floorplan_id_fk")
+  @@index([sector_id], map: "checklist_application_sector_id_fk")
+  @@index([applied_by], map: "checklist_application_user_id_fk")
+}
+
+model checklist_application_attachments {
+  id                  Int    @id @default(autoincrement())
+  application_item_id Int
+  url                 String @db.VarChar(255)
+
+  @@index([application_item_id], map: "checklist_application_attachments_application_item_id_fk")
+}
+
+model checklist_application_item {
+  id             Int                               @id @default(autoincrement())
+  application_id Int
+  item_id        Int
+  answer         checklist_application_item_answer
+  comment        String?                           @db.Text
+
+  @@unique([item_id, application_id], map: "checklist_application_item_item_id_application_id_uindex")
+  @@index([application_id], map: "checklist_application_item_checklist_application_id_fk")
+}
+
+model checklist_item {
+  id          Int     @id @default(autoincrement())
+  name        String  @db.VarChar(255)
+  description String? @db.Text
+  weight      Int
+  order       Int
+  section_id  Int
+
+  @@unique([section_id, order], map: "checklist_item_section_id_order_uindex")
+}
+
+model checklist_location_tag {
+  id         Int    @id @default(autoincrement())
+  name       String @db.VarChar(100)
+  project_id Int
+
+  @@index([project_id], map: "checklist_location_tag_project_id_fk")
+}
+
+model checklist_model {
+  id          Int                    @id @default(autoincrement())
+  name        String                 @db.VarChar(255)
+  description String?                @db.Text
+  status      checklist_model_status @default(DRAFT)
+  project_id  Int
+  created_by  Int?
+  code        Int?
+  source      checklist_model_source
+
+  @@unique([project_id, name], map: "checklist_model_project_id_name_uindex")
+  @@index([created_by], map: "checklist_model_user_id_fk")
+}
+
+model checklist_section {
+  id          Int     @id @default(autoincrement())
+  name        String  @db.VarChar(255)
+  description String? @db.Text
+  order       Int
+  model_id    Int
+
+  @@unique([model_id, order], map: "checklist_section_model_id_order_uindex")
+}
+
+model cin_connect_key {
+  prefix    String   @db.VarChar(255)
+  secret    String   @db.VarChar(255)
+  expiry    DateTime @db.Timestamp(0)
+  deleted   Boolean  @default(false)
+  client_id Int
+
+  @@id([prefix, secret])
+  @@index([client_id], map: "client_id")
+}
+
+model client {
+  id                                         Int                      @id @default(autoincrement())
+  name                                       String                   @db.VarChar(160)
+  cs_engagement                              Int?                     @default(1)
+  dashboard_enabled                          Boolean                  @default(false)
+  api_enabled                                Int?                     @default(0) @db.TinyInt
+  ca_customer_id                             String?                  @db.VarChar(255)
+  pipe_id                                    Int?
+  segment                                    client_segment?
+  category                                   client_category?
+  cnpj                                       String?                  @db.VarChar(255)
+  domain                                     String?                  @db.VarChar(255)
+  site                                       String?                  @db.VarChar(255)
+  emails                                     String?                  @db.LongText
+  phones                                     String?                  @db.LongText
+  success_plan                               String?                  @db.VarChar(255)
+  blur_faces                                 Int?                     @default(0) @db.TinyInt
+  measure                                    Boolean?                 @default(false)
+  rdo                                        Boolean?
+  custom_share                               Boolean?
+  custom_report                              Boolean                  @default(false)
+  safety                                     Boolean                  @default(false)
+  timeline                                   Boolean?                 @default(false)
+  video_capture                              Boolean                  @default(false)
+  advysor                                    Boolean                  @default(false)
+  advysor_power_bi_link                      String?                  @db.VarChar(255)
+  pbi_link                                   String?                  @db.VarChar(255)
+  forge_enabled                              Int?                     @default(0) @db.TinyInt
+  active_projects_limit                      Int?
+  archived_projects_limit                    Int?
+  has_unlimited_active_projects              Int?                     @default(0) @db.TinyInt
+  has_unlimited_archived_projects            Int?                     @default(0) @db.TinyInt
+  trial_length                               Int?
+  master_account_id                          Int?
+  entry_date                                 DateTime?                @db.Date
+  capture_frequency_obs                      String?                  @db.VarChar(64)
+  issues_obs                                 String?                  @db.VarChar(64)
+  sharing_obs                                String?                  @db.VarChar(64)
+  bim_obs                                    Boolean?                 @default(false)
+  briefing                                   String?                  @db.Text
+  primary_color                              String?                  @db.VarChar(255)
+  secondary_color                            String?                  @db.VarChar(255)
+  tertiary_color                             String?                  @db.VarChar(255)
+  highlight_color                            String?                  @db.VarChar(255)
+  cover_image                                String?                  @db.VarChar(255)
+  cover_design                               String?                  @db.VarChar(255)
+  back_cover_design                          String?                  @db.VarChar(255)
+  final_page_design                          String?                  @db.VarChar(255)
+  favicon                                    String?                  @db.VarChar(255)
+  instagram                                  String?                  @db.VarChar(255)
+  logo                                       String?                  @db.VarChar(255)
+  updated_at                                 DateTime?                @default(now()) @db.DateTime(0)
+  created_at                                 DateTime                 @default(now()) @db.DateTime(0)
+  contract_link                              String?                  @db.VarChar(255)
+  overdue_payment                            Boolean?
+  wrapped_2023_link                          String?                  @db.VarChar(255)
+  bb_building_type                           client_bb_building_type?
+  heat_track                                 Int                      @default(0) @db.TinyInt
+  project_dashboard_power_bi_link            String?                  @db.VarChar(255)
+  custom_project_dashboard                   Boolean?
+  checklist                                  Boolean                  @default(false)
+  is_enterprise                              Boolean                  @default(false)
+  archive_deactivation_period_months_default Int?
+  contract_inactive_date                     String?                  @db.Text
+  cin_connect                                Boolean                  @default(false)
+
+  @@index([master_account_id], map: "master_account_id")
+}
+
+model client_group {
+  id        Int                   @id @default(autoincrement())
+  name      String?               @db.VarChar(160)
+  default   Boolean               @default(false)
+  client_id Int
+  category  client_group_category
+
+  @@index([client_id], map: "client_group_ibfk_1")
+}
+
+model client_member {
+  id              Int     @id @unique(map: "id") @default(autoincrement())
+  user_id         Int?
+  client_group_id Int?
+  email           String? @db.VarChar(255)
+
+  @@index([client_group_id], map: "client_member_ibfk_3")
+  @@index([user_id], map: "user_id")
+}
+
+model comment_attachment {
+  id         Int     @id @unique(map: "id") @default(autoincrement())
+  name       String? @db.VarChar(120)
+  url        String  @db.VarChar(255)
+  type       String  @db.VarChar(5)
+  comment_id Int
+
+  @@index([comment_id], map: "comment_id")
+}
+
+model connection {
+  id               Int   @id @default(autoincrement())
+  pitch            Float @db.Float
+  yaw              Float @db.Float
+  viewpoint_target Int
+  image_id         Int
+
+  @@index([viewpoint_target], map: "connection_ibfk_1")
+  @@index([image_id], map: "connection_ibfk_2")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model construcode_link {
+  floorplan_id     Int
+  construcode_area Int
+
+  @@index([floorplan_id], map: "floorplan_id")
+  @@ignore
+}
+
+model cubemap_render {
+  id           Int      @id @unique(map: "id") @default(autoincrement())
+  name         String?  @db.VarChar(180)
+  front_url    String   @db.VarChar(255)
+  back_url     String   @db.VarChar(255)
+  top_url      String   @db.VarChar(255)
+  bottom_url   String   @db.VarChar(255)
+  left_url     String   @db.VarChar(255)
+  right_url    String   @db.VarChar(255)
+  size         Int      @default(0)
+  created_at   DateTime @default(now()) @db.DateTime(0)
+  created_by   Int?
+  viewpoint_id Int
+
+  @@index([created_by], map: "created_by")
+  @@index([viewpoint_id], map: "viewpoint_id")
+}
+
+model data_tables_api_key {
+  id         Int      @id @default(autoincrement())
+  api_key    String   @unique(map: "api_key") @db.VarChar(255)
+  created_at DateTime @default(now()) @db.DateTime(0)
+  name       String   @unique(map: "name") @db.VarChar(100)
+}
+
+model data_tables_api_key_permission {
+  id         Int     @id @default(autoincrement())
+  projects   Boolean @default(false)
+  captures   Boolean @default(false)
+  users      Boolean @default(false)
+  access     Boolean @default(false)
+  issues     Boolean @default(false)
+  links      Boolean @default(false)
+  tours      Boolean @default(false)
+  rdos       Boolean @default(false)
+  reports    Boolean @default(false)
+  clients    Int     @default(0) @db.TinyInt
+  counters   Int     @default(0) @db.TinyInt
+  api_key_id Int
+
+  @@index([api_key_id], map: "api_key_id")
+}
+
+model device {
+  id      Int    @id @default(autoincrement())
+  token   String @unique(map: "token") @db.VarChar(255)
+  user_id Int
+
+  @@index([user_id], map: "device_ibfk_1")
+}
+
+model drone_image {
+  id         Int      @id @default(autoincrement())
+  tile_id    Int
+  url        String   @db.VarChar(255)
+  token      String   @unique(map: "token_uindex") @db.Char(36)
+  date       DateTime @db.DateTime(0)
+  created_by Int
+  created_at DateTime @default(now()) @db.DateTime(0)
+
+  @@index([tile_id], map: "fk_drone_image_drone_tile_1")
+  @@index([created_by], map: "fk_user_drone_image_1")
+}
+
+model drone_map {
+  id         Int      @id @default(autoincrement())
+  project_id Int
+  name       String   @db.VarChar(255)
+  url        String   @db.VarChar(255)
+  created_by Int
+  crated_at  DateTime @default(now()) @db.DateTime(0)
+
+  @@index([project_id], map: "fk_drone_map_project_1")
+  @@index([created_by], map: "fk_user_drone_map_1")
+}
+
+model drone_tile {
+  id         Int      @id @default(autoincrement())
+  map_id     Int
+  x          Int
+  y          Int
+  created_by Int
+  created_at DateTime @default(now()) @db.DateTime(0)
+
+  @@index([map_id], map: "fk_drone_tile_drone_map_1")
+  @@index([created_by], map: "fk_user_drone_tile_1")
+}
+
+model equipment_category {
+  id         Int    @id @default(autoincrement())
+  name       String @db.VarChar(45)
+  project_id Int
+
+  @@index([project_id], map: "project_id")
+}
+
+model floorplan {
+  id         Int       @id @unique(map: "id") @default(autoincrement())
+  name       String?   @db.VarChar(255)
+  area       Float?    @db.Float
+  map        Boolean   @default(false)
+  url        String    @db.VarChar(255)
+  size       Int       @default(0)
+  width      Int?
+  height     Int?
+  updated_at DateTime? @default(now()) @db.DateTime(0)
+  created_at DateTime  @default(now()) @db.DateTime(0)
+  created_by Int?
+  sector_id  Int?
+  project_id Int
+
+  @@index([created_by], map: "created_by")
+  @@index([sector_id], map: "floorplan_ibfk_1")
+  @@index([project_id], map: "project_id")
+}
+
+model forge_model {
+  id         Int      @id @default(autoincrement())
+  name       String   @db.VarChar(160)
+  urn        String   @db.VarChar(255)
+  bucket_id  Int
+  sector_id  Int?
+  created_at DateTime @default(now()) @db.DateTime(0)
+  created_by Int?
+
+  @@index([bucket_id], map: "forge_model_ibfk_1")
+  @@index([created_by], map: "forge_model_ibfk_2")
+  @@index([sector_id], map: "forge_model_ibfk_3")
+}
+
+model generated_report {
+  id         Int                     @id @default(autoincrement())
+  name       String                  @db.VarChar(255)
+  size       Float?                  @db.Float
+  url        String?                 @db.VarChar(255)
+  type       generated_report_type
+  status     generated_report_status
+  created_by Int
+  created_at DateTime                @default(now()) @db.Timestamp(0)
+  project_id Int
+
+  @@index([created_by], map: "created_by")
+  @@index([project_id], map: "project_id")
+}
+
+model global_configuration {
+  id           Int     @id @default(autoincrement())
+  config_key   String? @unique(map: "global_configuration_key") @db.VarChar(255)
+  config_value String? @db.VarChar(255)
+}
+
+model group {
+  id         Int     @id @default(autoincrement())
+  name       String? @db.VarChar(160)
+  default    Boolean @default(false)
+  project_id Int
+
+  @@index([project_id], map: "group_ibfk_1")
+}
+
+model image {
+  id                        Int                   @id @unique(map: "id") @default(autoincrement())
+  url                       String                @db.VarChar(255)
+  blur_face_url             String?               @db.VarChar(255)
+  size                      Int                   @default(0)
+  yaw_offset                Float?                @db.Float
+  yaw_offset_confidence     Float?                @db.Float
+  user_yaw_offset           Float?                @db.Float
+  blur_in_progress          Boolean               @default(false)
+  date                      DateTime              @default(now()) @db.DateTime(0)
+  created_at                DateTime              @default(now()) @db.DateTime(0)
+  created_by                Int?
+  viewpoint_id              Int?
+  ppe_detection_in_progress Boolean?
+  latitude                  Float?                @db.Float
+  longitude                 Float?                @db.Float
+  origin                    image_origin?
+  capture_app_version       String?               @db.VarChar(15)
+  camera                    String?               @db.VarChar(255)
+  motion_quality            image_motion_quality?
+  token                     String                @unique(map: "image_token_uindex") @db.Char(36)
+  heat_score                Float?                @db.Float
+  heat_track_in_progress    Boolean?              @default(false)
+  old_url                   String?               @db.VarChar(255)
+  migration_date            DateTime?             @db.Timestamp(0)
+  upload_finished           Boolean               @default(true)
+  gamma                     Float?                @default(0) @db.Float
+  saturation                Float?                @default(0) @db.Float
+
+  @@index([created_by], map: "created_by")
+  @@index([viewpoint_id], map: "viewpoint_id")
+}
+
+model image_face {
+  id                Int                           @id @unique(map: "id") @default(autoincrement())
+  cx                Int                           @default(-1)
+  cy                Int                           @default(-1)
+  width             Int                           @default(0)
+  height            Int                           @default(0)
+  pitch             Float                         @default(0) @db.Float
+  yaw               Float                         @default(0) @db.Float
+  image_id          Int?
+  created_by        Int?
+  created_at        DateTime?                     @default(now()) @db.DateTime(0)
+  false_positive    Boolean                       @default(false)
+  prediction_result image_face_prediction_result? @default(correct)
+  deleted           Boolean?                      @default(false)
+
+  @@index([created_by], map: "created_by")
+  @@index([image_id], map: "image_id")
+}
+
+model image_safety {
+  id         Int    @id @default(autoincrement())
+  cx         Float? @db.Float
+  cy         Float? @db.Float
+  width      Int?
+  height     Int?
+  pitch      Float? @db.Float
+  yaw        Float? @db.Float
+  image_id   Int?
+  pred_class Int?
+
+  @@index([image_id], map: "image_id")
+}
+
+model insight_report {
+  id         Int                    @id @default(autoincrement())
+  created_at DateTime?              @default(now()) @db.Timestamp(0)
+  start_date DateTime               @db.Date
+  end_date   DateTime               @db.Date
+  status     insight_report_status? @default(QUEUE)
+  percentage Float?                 @default(0) @db.Float
+  project_id Int
+  prompt_msg String                 @db.VarChar(10000)
+
+  @@index([project_id], map: "project_id")
+}
+
+model insight_report_analysis {
+  id           Int       @id @default(autoincrement())
+  created_at   DateTime? @default(now()) @db.Timestamp(0)
+  gpt_text     String?   @db.Text
+  gpt_json     String?   @db.Text
+  total_tokens Int?
+  viewpoint_id Int
+  image_0_id   Int
+  image_1_id   Int
+
+  @@index([image_0_id], map: "image_0_id")
+  @@index([image_1_id], map: "image_1_id")
+  @@index([viewpoint_id], map: "viewpoint_id")
+}
+
+model insight_report_section {
+  id        Int     @id @default(autoincrement())
+  report_id Int
+  title     String? @db.VarChar(255)
+  gpt_text  String? @db.Text
+
+  @@index([report_id], map: "report_id")
+}
+
+model issue {
+  id                   Int            @id @unique(map: "id") @default(autoincrement())
+  code                 Int?
+  title                String         @db.VarChar(180)
+  priority             issue_priority
+  text                 String?        @db.Text
+  pitch                Float?         @db.Float
+  yaw                  Float?         @db.Float
+  audio                String?        @db.VarChar(255)
+  status               issue_status
+  due_date             DateTime?      @db.Date
+  type                 Int?
+  cause                Int?
+  to_review_at         DateTime?      @db.DateTime(0)
+  to_review_by         Int?
+  closed_by            Int?
+  updated_at           DateTime?      @default(now()) @db.DateTime(0)
+  closed_at            DateTime?      @db.DateTime(0)
+  created_at           DateTime       @default(now()) @db.DateTime(0)
+  created_by           Int?
+  image_id             Int?
+  viewpoint_id         Int?
+  project_id           Int?
+  origin               String         @db.VarChar(20)
+  thumbnail            String?        @db.VarChar(255)
+  attachment_thumbnail String?        @db.VarChar(255)
+
+  @@index([closed_by], map: "closed_by")
+  @@index([created_by], map: "created_by")
+  @@index([image_id], map: "image_id")
+  @@index([type], map: "issue_ibfk_3")
+  @@index([cause], map: "issue_ibfk_4")
+  @@index([project_id], map: "issue_ibfk_5")
+  @@index([to_review_by], map: "to_review_by")
+  @@index([viewpoint_id], map: "viewpoint_id")
+}
+
+model issue_attachment {
+  id       Int     @id @unique(map: "id") @default(autoincrement())
+  name     String? @db.VarChar(120)
+  url      String  @db.VarChar(255)
+  type     String  @db.VarChar(5)
+  issue_id Int
+  is_cover Boolean @default(false)
+  deleted  Boolean @default(false)
+
+  @@index([issue_id], map: "issue_id")
+}
+
+model issue_cause {
+  id         Int    @id @default(autoincrement())
+  label      String @db.VarChar(80)
+  name       String @db.VarChar(80)
+  project_id Int
+
+  @@index([project_id], map: "project_id")
+}
+
+model issue_comment {
+  id      Int      @id @unique(map: "id")
+  text    String   @db.Text
+  edited  Boolean  @default(false)
+  deleted Boolean? @default(false)
+}
+
+model issue_event {
+  id         Int              @id @unique(map: "id") @default(autoincrement())
+  type       issue_event_type
+  created_at DateTime         @default(now()) @db.DateTime(0)
+  created_by Int
+  issue_id   Int
+
+  @@index([created_by], map: "created_by")
+  @@index([issue_id], map: "issue_id")
+}
+
+model issue_last_seen {
+  id         Int       @id @default(autoincrement())
+  user_id    Int
+  issue_id   Int
+  project_id Int
+  created_at DateTime  @default(now()) @db.DateTime(0)
+  updated_at DateTime? @db.DateTime(0)
+
+  @@unique([user_id, issue_id, project_id], map: "unique_user_issue_project")
+  @@index([issue_id], map: "issue_id")
+  @@index([project_id], map: "project_id")
+  @@index([user_id], map: "user_id")
+}
+
+model issue_subject {
+  issue_id   Int
+  subject_id Int
+
+  @@id([issue_id, subject_id])
+  @@index([subject_id], map: "subject_id")
+}
+
+model issue_tag {
+  member_id Int
+  issue_id  Int
+
+  @@id([member_id, issue_id])
+  @@index([issue_id], map: "issue_id")
+}
+
+model issue_type {
+  id             Int      @id @default(autoincrement())
+  label          String   @db.VarChar(80)
+  name           String   @db.VarChar(80)
+  project_id     Int
+  is_report_type Boolean? @default(false)
+  code           String?  @db.VarChar(100)
+
+  @@index([project_id], map: "project_id")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model issued_token {
+  refresh_token String               @db.VarChar(255)
+  issued_at     DateTime             @default(now()) @db.DateTime(0)
+  rotated_at    DateTime?            @db.DateTime(0)
+  fcm_token     String?              @db.VarChar(255)
+  origin        issued_token_origin?
+  user_agent    String?              @db.VarChar(255)
+  app_id        Int?
+  user_id       Int
+
+  @@index([app_id], map: "app_id")
+  @@index([refresh_token], map: "refresh_token")
+  @@index([user_id], map: "user_id")
+  @@ignore
+}
+
+model lead {
+  id           Int      @id @default(autoincrement())
+  email        String   @db.VarChar(255)
+  name         String   @db.VarChar(255)
+  company      String   @db.VarChar(255)
+  company_role String?  @db.VarChar(100)
+  country_code String?  @db.VarChar(10)
+  phone        String?  @db.VarChar(20)
+  ip           String?  @db.VarChar(20)
+  created_at   DateTime @default(now()) @db.DateTime(0)
+}
+
+model master_account {
+  id        Int @id @default(autoincrement())
+  client_id Int
+  user_id   Int @unique(map: "user_id")
+
+  @@index([client_id], map: "client_id")
+}
+
+model member {
+  id                Int               @id @unique(map: "id") @default(autoincrement())
+  email             String            @db.VarChar(255)
+  permission        member_permission @default(employee)
+  last_seen         DateTime?         @db.DateTime(0)
+  user_id           Int?
+  group_id          Int?
+  project_id        Int
+  can_edit_timeline Boolean           @default(false)
+
+  @@index([group_id], map: "member_ibfk_3")
+  @@index([project_id], map: "project_id")
+  @@index([user_id], map: "user_id")
+}
+
+model photo_detail {
+  id           BigInt    @id @unique(map: "id") @default(autoincrement()) @db.UnsignedBigInt
+  name         String    @db.Text
+  description  String?   @db.Text
+  viewpoint_id Int
+  project_id   Int
+  image_url    String    @db.Text
+  capture_date DateTime? @db.Timestamp(0)
+  created_at   DateTime? @default(now()) @db.Timestamp(0)
+  created_by   Int?
+  updated_at   DateTime? @default(now()) @db.Timestamp(0)
+
+  @@index([created_by], map: "fk_photo_created_by")
+  @@index([project_id], map: "fk_photo_project")
+  @@index([viewpoint_id], map: "fk_photo_viewpoint")
+}
+
+model photo_view_last_seen {
+  id         BigInt    @id @unique(map: "id") @default(autoincrement()) @db.UnsignedBigInt
+  user_id    Int
+  project_id Int
+  created_at DateTime? @default(now()) @db.Timestamp(0)
+  updated_at DateTime? @default(now()) @db.Timestamp(0)
+
+  @@index([project_id], map: "project_id")
+  @@index([user_id], map: "user_id")
+}
+
+model photographic_report {
+  id           Int       @id @default(autoincrement())
+  name         String    @db.VarChar(255)
+  pdf_message  String?   @db.Text
+  tour_message String?   @db.Text
+  date         DateTime  @db.Date
+  pdf_link     String?   @db.Text
+  tour_id      String    @db.VarChar(100)
+  project_id   Int
+  thumbnail    String?   @db.VarChar(255)
+  created_at   DateTime? @default(now()) @db.Timestamp(0)
+  updated_at   DateTime? @default(now()) @db.Timestamp(0)
+
+  @@index([project_id], map: "project_id")
+}
+
+model photographic_report_viewpoints {
+  viewpoint_id Int
+  report_id    Int
+  pitch        Float?  @db.Float
+  yaw          Float?  @db.Float
+  fov          Int?
+  comment      String? @db.Text
+
+  @@id([viewpoint_id, report_id])
+  @@index([report_id], map: "report_id")
+}
+
+model project {
+  id                                 Int                       @id @unique(map: "id") @default(autoincrement())
+  name                               String                    @db.VarChar(255)
+  logo                               String?                   @db.VarChar(255)
+  client                             String?                   @db.VarChar(255)
+  constructor_name                   String?                   @db.VarChar(255)
+  client_logo                        String?                   @db.VarChar(255)
+  responsible                        String?                   @db.VarChar(255)
+  area                               Float?                    @db.Float
+  thumbnail                          String?                   @db.VarChar(255)
+  construction_type                  String?                   @db.VarChar(255)
+  project_type                       String?                   @db.VarChar(255)
+  project_type_id                    Int?
+  require_map                        Boolean                   @default(false)
+  address                            String                    @db.Text
+  address_thumbnail                  String?                   @db.VarChar(255)
+  latitude                           Float                     @db.Float
+  longitude                          Float                     @db.Float
+  description                        String?                   @db.Text
+  start                              DateTime?                 @db.Date
+  expected_finish                    DateTime?                 @db.Date
+  trial_expiration                   DateTime                  @default(now()) @db.DateTime(0)
+  payment_expiration                 DateTime                  @default(now()) @db.DateTime(0)
+  blocked                            Boolean                   @default(false)
+  priorize                           Boolean                   @default(true)
+  status                             project_status
+  step                               Int                       @default(1)
+  success_step                       Int?                      @default(1)
+  ready                              Boolean                   @default(false)
+  forge_enabled                      Boolean                   @default(false)
+  allowed_forge_models               Int?                      @default(0)
+  project_style                      project_project_style     @default(normal)
+  version                            BigInt                    @default(1)
+  engagement                         Float?                    @default(0) @db.Float
+  client_id                          Int?
+  archived                           Boolean                   @default(false)
+  archived_at                        DateTime?                 @db.DateTime(0)
+  archive_reason                     String?                   @db.VarChar(255)
+  updated_at                         DateTime?                 @default(now()) @db.DateTime(0)
+  created_at                         DateTime                  @default(now()) @db.DateTime(0)
+  construcode_token                  String?                   @db.VarChar(255)
+  construcode_id                     Int?
+  trutec_key                         String?                   @db.VarChar(255)
+  trutec_secret                      String?                   @db.VarChar(255)
+  created_by                         Int?
+  rule_id                            Int?
+  request_id                         Int?
+  blur_faces                         Boolean                   @default(false)
+  measure                            Boolean?                  @default(false)
+  safety                             Boolean                   @default(false)
+  is_on_pipe                         Int?                      @default(0) @db.TinyInt
+  trial_length                       Int?
+  have_visits_while_using            Boolean?
+  number_of_presencial_visits_made   Int?
+  bb_custom_event                    String?                   @db.VarChar(20)
+  bb_dependency_prefix               String?                   @db.VarChar(15)
+  bb_sub_number                      String?                   @db.VarChar(15)
+  bb_dependency_name                 String?                   @db.Text
+  bb_dependency_city                 String?                   @db.VarChar(15)
+  bb_platform                        String?                   @db.VarChar(255)
+  bb_responsible_key                 String?                   @db.VarChar(150)
+  cover_image                        String?                   @db.VarChar(255)
+  custom_report                      Boolean                   @default(false)
+  custom_share                       Boolean?
+  rdo                                Boolean                   @default(false)
+  contract_number                    String?                   @db.VarChar(255)
+  video_capture                      Int?                      @db.TinyInt
+  timeline                           Boolean                   @default(false)
+  advysor_power_bi_bookmark          String?                   @db.VarChar(255)
+  bb_building_type                   project_bb_building_type?
+  uf                                 String?                   @db.VarChar(2)
+  heat_track                         Int                       @default(0) @db.TinyInt
+  advysor_power_bi_dashboard_url     String?                   @db.VarChar(255)
+  checklist                          Boolean                   @default(false)
+  archive_deactivation_period_months Int?                      @default(-1)
+  ai_summary                         Boolean                   @default(true)
+  automate_advysor_email             Boolean                   @default(false)
+  rdo_daily_summary                  Boolean?                  @default(true)
+
+  @@index([created_by], map: "created_by")
+  @@index([client_id], map: "project_ibfk_2")
+  @@index([project_type_id], map: "project_type_id")
+  @@index([request_id], map: "request_id")
+  @@index([rule_id], map: "rule_id")
+}
+
+model project_overview {
+  project_id             Int
+  date                   DateTime @db.Date
+  issue_count            Int
+  issue_open_count       Int
+  issue_closed_count     Int
+  issue_in_review_count  Int
+  issue_overdue_count    Int      @default(0)
+  image_count            Int
+  viewpoint_count        Int
+  active_viewpoint_count Int
+
+  @@id([project_id, date])
+}
+
+model project_request {
+  id                Int       @id @default(autoincrement())
+  name              String    @db.VarChar(255)
+  address           String    @db.VarChar(255)
+  address_thumbnail String?   @db.VarChar(255)
+  area              Float?    @db.Float
+  latitude          Float     @db.Float
+  longitude         Float     @db.Float
+  thumbnail         String?   @db.VarChar(255)
+  approved_by       Int?
+  approved_at       DateTime? @db.DateTime(0)
+  reproved_by       Int?
+  reproved_at       DateTime? @db.DateTime(0)
+  created_at        DateTime  @default(now()) @db.DateTime(0)
+  created_by        Int?
+  start             DateTime? @db.Date
+  expected_finish   DateTime? @db.Date
+
+  @@index([approved_by], map: "approved_by")
+  @@index([created_by], map: "created_by")
+  @@index([reproved_by], map: "reproved_by")
+}
+
+model project_type {
+  id         Int       @id @default(autoincrement())
+  client_id  Int?
+  type       String    @db.VarChar(255)
+  created_at DateTime  @default(now()) @db.DateTime(0)
+  created_by Int?
+  updated_at DateTime? @default(now()) @db.DateTime(0)
+  updated_by Int?
+
+  @@unique([type, client_id], map: "unique_type_client_id")
+  @@index([client_id], map: "client_id")
+  @@index([created_by], map: "created_by")
+  @@index([updated_by], map: "updated_by")
+}
+
+model rdo {
+  id                  Int                      @id @default(autoincrement())
+  date                DateTime                 @db.Date
+  number              Int?
+  morning_weather     rdo_morning_weather?
+  morning_condition   rdo_morning_condition?
+  afternoon_weather   rdo_afternoon_weather?
+  afternoon_condition rdo_afternoon_condition?
+  night_weather       rdo_night_weather?
+  night_condition     rdo_night_condition?
+  comments            String?                  @db.Text
+  other               String?                  @db.Text
+  project_id          Int
+  origin              rdo_origin
+  status              rdo_status               @default(DRAFT)
+  report_url          String?                  @db.VarChar(255)
+  floorplan_id        Int?
+  sector_id           Int?
+
+  @@index([floorplan_id], map: "fk_rdo_floorplan")
+  @@index([sector_id], map: "fk_rdo_sector")
+  @@index([project_id], map: "project_id")
+  @@index([afternoon_condition], map: "rdo_afternoon_condition_index")
+  @@index([date], map: "rdo_date_index")
+  @@index([morning_condition], map: "rdo_morning_condition_index")
+  @@index([night_condition], map: "rdo_night_condition_index")
+}
+
+model rdo_activity {
+  id          Int                 @id @default(autoincrement())
+  description String              @db.Text
+  status      rdo_activity_status
+  percentage  Int
+  rdo_id      Int
+
+  @@index([rdo_id], map: "rdo_id")
+}
+
+model rdo_daily_summary {
+  id                       Int       @id @default(autoincrement())
+  created_at               DateTime? @default(now()) @db.Timestamp(0)
+  analysed_date            DateTime  @db.Date
+  summary                  String?   @db.Text
+  project_progress_summary String?   @db.Text
+
+  @@index([analysed_date], map: "idx_analysed_date")
+}
+
+model rdo_equipment {
+  equipment_category_id Int
+  rdo_id                Int
+  quantity              Int
+
+  @@id([equipment_category_id, rdo_id])
+  @@index([rdo_id], map: "rdo_id")
+}
+
+model rdo_event {
+  id         Int             @id @default(autoincrement())
+  event      rdo_event_event
+  created_by Int
+  created_at DateTime        @default(now()) @db.Timestamp(0)
+  metadata   String?         @db.VarChar(255)
+  rdo_id     Int
+
+  @@index([event], map: "rdo_event_event_index")
+  @@index([rdo_id], map: "rdo_event_rdo_id_fk")
+  @@index([created_by], map: "rdo_event_user_id_fk")
+}
+
+model rdo_image {
+  id          Int     @id @default(autoincrement())
+  url         String  @db.VarChar(255)
+  description String? @db.VarChar(150)
+  rdo_id      Int
+
+  @@index([rdo_id], map: "rdo_id")
+}
+
+model rdo_restriction {
+  id                Int     @id @default(autoincrement())
+  project_id        Int
+  local_restriction Boolean @default(false)
+  tag_restriction   Boolean @default(false)
+
+  @@index([project_id], map: "rdo_restriction_project_id_fk")
+}
+
+model rdo_tag {
+  id         Int    @id @default(autoincrement())
+  name       String @db.VarChar(100)
+  project_id Int
+
+  @@index([project_id], map: "rdo_tag_project_id_fk")
+}
+
+model rdo_tag_link {
+  id     Int @id @default(autoincrement())
+  rdo_id Int
+  tag_id Int
+
+  @@unique([rdo_id, tag_id], map: "unique_rdo_tag")
+  @@index([tag_id], map: "rdo_tag_link_tag_id_fk")
+}
+
+model rdo_worker {
+  worker_category_id Int
+  rdo_id             Int
+  quantity           Int
+
+  @@id([worker_category_id, rdo_id])
+  @@index([rdo_id], map: "rdo_id")
+}
+
+model realtime_camera {
+  id                Int  @id @default(autoincrement())
+  camera_identifier Int
+  project_id        Int?
+
+  @@index([project_id], map: "camera_project_foreign_key_id")
+}
+
+model rule {
+  id         Int       @id @default(autoincrement())
+  expire_at  DateTime? @db.Date
+  can_create Int?
+  domain     String?   @db.VarChar(100)
+  user_id    Int?
+  email      String?   @db.VarChar(255)
+  created_at DateTime  @default(now()) @db.DateTime(0)
+
+  @@index([user_id], map: "user_id")
+}
+
+model scheduling {
+  id                        Int      @id @default(autoincrement())
+  name                      String   @db.VarChar(255)
+  description               String?  @db.Text
+  justification_category    String?  @db.VarChar(255)
+  justification_description String?  @db.VarChar(255)
+  canceled                  Int      @default(0) @db.TinyInt
+  date                      DateTime @db.DateTime(0)
+  original_date             DateTime @db.DateTime(0)
+  responsible               Int?
+  deleted                   Int      @default(0)
+  recurrency_id             Int?
+  created_by                Int?
+  project_id                Int
+  created_at                DateTime @default(now()) @db.DateTime(0)
+
+  @@index([responsible], map: "scheduling_ibfk_1")
+  @@index([project_id], map: "scheduling_ibfk_2")
+  @@index([recurrency_id], map: "scheduling_ibfk_3")
+  @@index([created_by], map: "scheduling_ibfk_4")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model scheduling_location {
+  scheduling_id Int
+  viewpoint_id  Int
+
+  @@index([scheduling_id], map: "scheduling_location_ibfk_1")
+  @@index([viewpoint_id], map: "scheduling_location_ibfk_2")
+  @@ignore
+}
+
+model scheduling_recurrency {
+  id          Int                        @id @default(autoincrement())
+  name        String                     @db.VarChar(255)
+  description String?                    @db.VarChar(255)
+  start_date  DateTime                   @db.DateTime(0)
+  next_date   DateTime                   @db.DateTime(0)
+  end_date    DateTime?                  @db.DateTime(0)
+  offset      Int?
+  type        scheduling_recurrency_type
+  created_by  Int?
+  created_at  DateTime                   @default(now()) @db.DateTime(0)
+  responsible Int?
+  project_id  Int
+
+  @@index([created_by], map: "created_by")
+  @@index([project_id], map: "project_id")
+  @@index([responsible], map: "responsible")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model scheduling_recurrency_location {
+  recurrency_id Int
+  viewpoint_id  Int
+
+  @@index([recurrency_id], map: "recurrency_id")
+  @@index([viewpoint_id], map: "viewpoint_id")
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model scheduling_recurrency_monthly_options {
+  id   Int
+  day  Int
+  week Int?
+
+  @@index([id], map: "id")
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model scheduling_recurrency_weekly_options {
+  id        Int
+  sunday    Boolean @default(false)
+  monday    Boolean @default(false)
+  tuesday   Boolean @default(false)
+  wednesday Boolean @default(false)
+  thursday  Boolean @default(false)
+  friday    Boolean @default(false)
+  saturday  Boolean @default(false)
+
+  @@index([id], map: "id")
+  @@ignore
+}
+
+model sector {
+  id           Int       @id @default(autoincrement())
+  name         String    @db.VarChar(255)
+  floorplan_id Int
+  created_at   DateTime  @default(now()) @db.DateTime(0)
+  updated_at   DateTime? @default(now()) @db.DateTime(0)
+
+  @@index([floorplan_id], map: "sector_ibfk_1")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model sector_coords {
+  sort      Int
+  x         Int
+  y         Int
+  sector_id Int
+
+  @@index([sector_id], map: "sector_coords_ibfk_1")
+  @@ignore
+}
+
+model sso_app {
+  id                      Int      @id @default(autoincrement())
+  sso_client_id           String   @db.VarChar(255)
+  sso_client_pass         String?  @db.VarChar(255)
+  sso_basic_token         String?  @db.VarChar(255)
+  client_id               Int?
+  scope                   String?  @db.VarChar(150)
+  domain                  String   @unique(map: "domain") @db.VarChar(255)
+  redirect_url            String?  @db.VarChar(255)
+  name                    String?  @db.VarChar(100)
+  authorize_url           String   @db.Text
+  get_token_url           String?  @db.VarChar(255)
+  user_info_url           String?  @db.VarChar(255)
+  code_challenge_required Boolean  @default(false)
+  created_at              DateTime @default(now()) @db.DateTime(0)
+
+  @@index([client_id], map: "client_id")
+}
+
+model subject {
+  id         Int    @id @unique(map: "id") @default(autoincrement())
+  code       String @db.VarChar(5)
+  name       String @db.VarChar(80)
+  project_id Int
+
+  @@index([project_id], map: "subject_ibfk_1")
+}
+
+model support_session {
+  id         Int       @id @default(autoincrement())
+  user_id    Int
+  project_id Int
+  created_by Int
+  start_date DateTime  @db.DateTime(0)
+  end_date   DateTime? @db.DateTime(0)
+
+  @@index([created_by], map: "created_by")
+  @@index([project_id], map: "project_id")
+  @@index([user_id], map: "user_id")
+}
+
+model user {
+  id                            Int              @id @unique(map: "id") @default(autoincrement())
+  name                          String           @db.VarChar(150)
+  surname                       String           @db.VarChar(150)
+  country_code                  String?          @db.VarChar(10)
+  phone                         String?          @db.VarChar(20)
+  address                       String?          @db.VarChar(255)
+  role                          String           @db.VarChar(150)
+  email                         String           @unique(map: "email") @db.VarChar(255)
+  password                      String           @db.VarChar(255)
+  mfa_enabled                   Boolean          @default(false)
+  mfa_secret                    String?          @db.VarChar(255)
+  mfa_requested_at              DateTime?        @db.DateTime(0)
+  confirmation_token            String           @db.VarChar(60)
+  confirmed_email               Boolean          @default(false)
+  blocked                       Boolean          @default(false)
+  accepted_terms                Boolean          @default(false)
+  watched_first_access_tutorial Int              @default(0) @db.TinyInt
+  password_recover              Int              @default(0) @db.TinyInt
+  image                         String?          @db.VarChar(255)
+  client_id                     Int?
+  created_at                    DateTime         @default(now()) @db.DateTime(0)
+  created_os                    user_created_os?
+  locale                        String           @default("pt_BR") @db.VarChar(8)
+  can_access_analytics          Boolean          @default(false)
+  require_third_party_auth      Boolean          @default(false)
+  sso_app_id                    Int?
+  created_first_project         Boolean          @default(false)
+  created_first_issue           Boolean          @default(false)
+  created_first_schedule        Boolean          @default(false)
+  created_first_tour            Boolean          @default(false)
+  created_first_link            Boolean          @default(false)
+
+  @@index([client_id], map: "client_id")
+  @@index([sso_app_id], map: "sso_app_id")
+}
+
+model user_daily_notifications_cooldown {
+  id                       Int       @id @default(autoincrement())
+  user_id                  Int
+  project_without_captures DateTime? @db.Timestamp(0)
+  user_without_access      DateTime? @db.Timestamp(0)
+
+  @@index([user_id], map: "user_id")
+}
+
+model user_email_preferences {
+  user_id                     Int     @id @unique(map: "USER_ID")
+  issue_daily                 Boolean @default(true)
+  issue_new_tag               Boolean @default(true)
+  issue_creator_change_status Boolean @default(true)
+  issue_tag_change_status     Boolean @default(true)
+  new_capture                 Boolean @default(true)
+}
+
+model user_integration {
+  id              Int                         @id @default(autoincrement())
+  name            String                      @db.VarChar(255)
+  permission      user_integration_permission
+  key             String                      @unique(map: "key") @db.VarChar(255)
+  secret          String                      @db.VarChar(255)
+  expiration_date DateTime?                   @db.Date
+  created_at      DateTime                    @default(now()) @db.DateTime(0)
+  user_id         Int
+
+  @@index([user_id], map: "user_id")
+}
+
+model video {
+  id            Int           @id @default(autoincrement())
+  code          Int?
+  start_point_x Int?
+  start_point_y Int?
+  end_point_x   Int?
+  end_point_y   Int?
+  file          String?       @db.VarChar(255)
+  created_at    DateTime?     @db.Date
+  date          DateTime?     @db.DateTime(0)
+  created_by    Int?
+  status        video_status?
+  floorplan_id  Int?
+  file_aux_1    String?       @db.VarChar(255)
+  file_aux_2    String?       @db.VarChar(255)
+  camera_type   String?       @db.VarChar(255)
+  capture_id    Int?
+  retries       Int           @default(0)
+  deleted       Boolean       @default(false)
+  duration      Int           @default(0)
+  size          BigInt        @default(0)
+
+  @@index([created_by], map: "created_by")
+  @@index([capture_id], map: "fk_capture_id")
+  @@index([floorplan_id], map: "video_ibfk_1")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model video_capture_location {
+  capture_id   Int
+  date         DateTime @db.DateTime(0)
+  floorplan_id Int
+  image_id     Int
+
+  @@index([capture_id], map: "capture_id")
+  @@index([floorplan_id], map: "floorplan_id")
+  @@index([image_id], map: "image_id")
+  @@ignore
+}
+
+model viewer {
+  id         Int    @id @default(autoincrement())
+  email      String @db.VarChar(255)
+  user_id    Int?
+  project_id Int
+
+  @@index([project_id], map: "viewer_ibfk_1")
+  @@index([user_id], map: "viewer_ibfk_2")
+}
+
+model viewer_floorplan {
+  viewer_id    Int
+  floorplan_id Int
+
+  @@id([viewer_id, floorplan_id])
+  @@index([floorplan_id], map: "folder_id")
+}
+
+model viewer_viewpoint {
+  viewer_id    Int
+  floorplan_id Int
+  viewpoint_id Int
+
+  @@id([viewer_id, floorplan_id, viewpoint_id])
+  @@index([viewpoint_id], map: "viewpoint_id")
+}
+
+model viewpoint {
+  id           Int       @id @unique(map: "id") @default(autoincrement())
+  name         String    @db.VarChar(150)
+  x            Int
+  y            Int
+  updated_at   DateTime? @default(now()) @db.DateTime(0)
+  created_at   DateTime  @default(now()) @db.DateTime(0)
+  created_by   Int?
+  floorplan_id Int
+  is_drone     Boolean   @default(false)
+
+  @@index([created_by], map: "created_by")
+  @@index([floorplan_id], map: "folder_id")
+}
+
+model worker_category {
+  id         Int                  @id @default(autoincrement())
+  name       String               @db.VarChar(45)
+  type       worker_category_type
+  project_id Int
+
+  @@index([project_id], map: "project_id")
+}
+
+enum checklist_application_status {
+  IN_PROGRESS
+  DONE
+}
+
+enum issue_event_type {
+  comment
+  close
+  reopen
+  to_review
+  to_progress
+  reject
+}
+
+enum rdo_event_event {
+  CREATED
+  UPDATED
+  CHANGED_STATUS
+  DENIED
+  APPROVED
+}
+
+enum member_permission {
+  owner
+  admin
+  employee
+}
+
+enum rdo_activity_status {
+  NOT_STARTED
+  STARTED
+  IN_PROGRESS
+  NO_PROGRESS
+  STOPPED
+  DONE
+}
+
+enum user_integration_permission {
+  read
+}
+
+enum worker_category_type {
+  DIRECT
+  INDIRECT
+  OUTSOURCED
+}
+
+enum checklist_application_item_answer {
+  NA
+  BAD
+  NEUTRAL
+  GOOD
+}
+
+enum checklist_model_status {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+enum issue_priority {
+  high
+  medium
+  low
+}
+
+enum rdo_morning_weather {
+  CLEAR_SKY
+  FEW_CLOUDS
+  CLOUDS
+  RAIN
+  THUNDERSTORM
+  SNOW
+  MIST
+  HAIL
+}
+
+enum client_group_category {
+  organization
+  others
+  master_account
+}
+
+enum generated_report_type {
+  ISSUES_PHOTOGRAPHIC
+  ISSUES_CONFORMITY
+  ISSUES_CHECKLIST
+  ISSUES_WORK_SAFETY
+  RDO
+  RDO_GROUPED
+  ISSUES
+}
+
+enum insight_report_status {
+  QUEUE
+  PROCESSING
+  DONE
+  FAILED
+}
+
+enum issued_token_origin {
+  web
+  app
+  capture
+}
+
+enum rdo_morning_condition {
+  VIABLE
+  NON_VIABLE
+}
+
+enum generated_report_status {
+  WAITING
+  IN_PROGRESS
+  DONE
+  FAILED
+}
+
+enum rdo_afternoon_weather {
+  CLEAR_SKY
+  FEW_CLOUDS
+  CLOUDS
+  RAIN
+  THUNDERSTORM
+  SNOW
+  MIST
+  HAIL
+}
+
+enum rdo_afternoon_condition {
+  VIABLE
+  NON_VIABLE
+}
+
+enum checklist_model_source {
+  CREATED
+  IMPORTED
+  DUPLICATED
+}
+
+enum client_segment {
+  government
+  developer
+  manager
+  b2b_contractor     @map("b2b-contractor")
+  investment_funds   @map("investment-funds")
+  expansion_networks @map("expansion-networks")
+  industrial_owner   @map("industrial-owner")
+  service_providers  @map("service-providers")
+  other
+}
+
+enum rdo_night_weather {
+  CLEAR_SKY
+  FEW_CLOUDS
+  CLOUDS
+  RAIN
+  THUNDERSTORM
+  SNOW
+  MIST
+  HAIL
+}
+
+enum scheduling_recurrency_type {
+  daily
+  weekly
+  monthly
+  EMPTY_ENUM_VALUE @map("")
+}
+
+enum client_category {
+  single_family              @map("single-family")
+  low_standard_multi_family  @map("low-standard-multi-family")
+  high_standard_multi_family @map("high-standard-multi-family")
+  industrial
+  infrastructure
+  institutional_works        @map("institutional-works")
+  commercial
+  inspection
+  other
+}
+
+enum issue_status {
+  open
+  closed
+  in_review
+  in_progress
+  rejected
+}
+
+enum rdo_night_condition {
+  VIABLE
+  NON_VIABLE
+}
+
+enum video_status {
+  WAITING_FILE
+  WAITING_QUEUE
+  IN_PROGRESS
+  FAILED_STITCH
+  FAILED_PROCESSING
+  DONE
+}
+
+enum image_face_prediction_result {
+  false_positive
+  false_negative
+  correct
+  updated
+}
+
+enum rdo_origin {
+  APP
+  WEB
+}
+
+enum rdo_status {
+  DRAFT
+  DENIED
+  APPROVED
+  WAITING_APPROVAL
+}
+
+enum image_origin {
+  capture
+  web
+  video_service
+}
+
+enum image_motion_quality {
+  inconclusive
+  low
+  medium
+  high
+}
+
+enum user_created_os {
+  linux
+  windows
+  mac
+  android
+  ios
+}
+
+enum project_status {
+  unassigned
+  in_progress
+  waiting
+  test
+  done
+}
+
+enum project_project_style {
+  normal
+  light
+}
+
+enum client_bb_building_type {
+  A
+  B
+  C
+}
+
+enum project_bb_building_type {
+  A
+  B
+  C
+}

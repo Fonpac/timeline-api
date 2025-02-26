@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common'
 import { ConfigModule } from '@nestjs/config'
 import { MongooseModule } from '@nestjs/mongoose'
 import { TimelinesModule } from './timelines/timelines.module'
+import { PrismaModule } from './prisma/prisma.module'
+import { AuthModule } from './auth/auth.module'
 import * as mongoose from 'mongoose'
 import * as fs from 'fs'
 import * as path from 'path'
@@ -31,6 +33,8 @@ import * as path from 'path'
                 }
             },
         }),
+        PrismaModule,
+        AuthModule,
         TimelinesModule,
     ],
 })

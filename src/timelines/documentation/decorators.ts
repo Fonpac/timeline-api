@@ -32,7 +32,7 @@ export function ApiProjectParam() {
     return ApiParam({
         name: 'projectId',
         description: 'Project ID',
-        example: '507f1f77bcf86cd799439011',
+        example: '20',
     })
 }
 

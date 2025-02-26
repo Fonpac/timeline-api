@@ -3,6 +3,7 @@ import { ValidationPipe } from '@nestjs/common'
 import { AppModule } from './app.module'
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'
 import { apiReference } from '@scalar/nestjs-api-reference'
+import { AuthGuard } from './auth/auth.guard'
 
 async function bootstrap() {
     const app = await NestFactory.create(AppModule)
@@ -16,12 +17,27 @@ async function bootstrap() {
 
     app.useGlobalPipes(new ValidationPipe())
 
+    // Get the AuthGuard from the app context
+    const authGuard = app.get(AuthGuard)
+    app.useGlobalGuards(authGuard)
+
     // Configuração do Swagger
     const config = new DocumentBuilder()
         .setTitle('Timeline API')
         .setDescription('API para gerenciamento de timelines de projetos')
         .setVersion('1.0')
         .addTag('Timelines')
+        .addBearerAuth(
+            {
+                type: 'http',
+                scheme: 'bearer',
+                bearerFormat: 'JWT',
+                name: 'JWT',
+                description: 'Enter JWT token',
+                in: 'header',
+            },
+            'JWT-auth'
+        )
         .build()
 
     const document = SwaggerModule.createDocument(app, config)

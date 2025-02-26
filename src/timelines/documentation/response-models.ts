@@ -29,7 +29,7 @@ export class TimelineProgressResponse {
  */
 export class TaskResponse {
     @ApiProperty({
-        example: '507f1f77bcf86cd799439011',
+        example: '20',
         description: 'Unique identifier for the task',
     })
     id: string
@@ -137,7 +137,7 @@ export class TaskResponse {
  */
 export class TimelineResponse {
     @ApiProperty({
-        example: '507f1f77bcf86cd799439011',
+        example: '20',
         description: 'Unique identifier for the timeline',
     })
     id: string
