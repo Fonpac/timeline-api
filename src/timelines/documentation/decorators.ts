@@ -26,40 +26,40 @@ import {
 import { createTimelineExample, updateTimelineExample, deleteProgressExample, updateMeasurementExample, bulkUpdateTaskExample } from './request-examples'
 
 /**
- * Common project ID parameter decorator
+ * Decorador comum para parâmetro de ID do projeto
  */
 export function ApiProjectParam() {
     return ApiParam({
         name: 'projectId',
-        description: 'Project ID',
+        description: 'ID do Projeto',
         example: '20',
     })
 }
 
 /**
- * Common timeline ID parameter decorator
+ * Decorador comum para parâmetro de ID da timeline
  */
 export function ApiTimelineParam() {
     return ApiParam({
         name: 'timelineId',
-        description: 'Timeline ID',
+        description: 'ID da Timeline',
         example: '60a12e5c9f15c012d8e40ab1',
     })
 }
 
 /**
- * Common task ID parameter decorator
+ * Decorador comum para parâmetro de ID da tarefa
  */
 export function ApiTaskParam() {
     return ApiParam({
         name: 'taskId',
-        description: 'Task ID',
+        description: 'ID da Tarefa',
         example: '60a12e5c9f15c012d8e40cd3',
     })
 }
 
 /**
- * Filter query parameters decorator
+ * Decorador para parâmetros de consulta de filtro
  */
 export function ApiFilterQuery() {
     return applyDecorators(
@@ -68,53 +68,53 @@ export function ApiFilterQuery() {
             required: false,
             isArray: true,
             enum: ['to_start', 'in_progress', 'to_complete'],
-            description: 'Filter by planned status',
+            description: 'Filtrar por status planejado',
         }),
         ApiQuery({
             name: 'execution_status',
             required: false,
             isArray: true,
             enum: ['planned', 'started', 'completed'],
-            description: 'Filter by execution status',
+            description: 'Filtrar por status de execução',
         }),
         ApiQuery({
             name: 'overall_status',
             required: false,
             isArray: true,
             enum: ['on_time', 'ahead', 'delayed'],
-            description: 'Filter by overall status',
+            description: 'Filtrar por status geral',
         }),
         ApiQuery({
             name: 'start_date',
             required: false,
             type: Date,
-            description: 'Filter by start date',
+            description: 'Filtrar por data de início',
         }),
         ApiQuery({
             name: 'end_date',
             required: false,
             type: Date,
-            description: 'Filter by end date',
+            description: 'Filtrar por data de término',
         }),
         ApiQuery({
             name: 'score_on_date',
             required: false,
             type: Date,
-            description: 'Calculate scores on this date',
+            description: 'Calcular pontuações nesta data',
         })
     )
 }
 
 /**
- * Decorator for the history endpoint
+ * Decorador para o endpoint de histórico
  */
 export function ApiGetHistory() {
     return applyDecorators(
-        ApiOperation({ summary: 'Get timeline history for a project' }),
+        ApiOperation({ summary: 'Obter histórico da timeline para um projeto' }),
         ApiProjectParam(),
         ApiResponse({
             status: 200,
-            description: 'Returns timeline history with progress measurements',
+            description: 'Retorna o histórico da timeline com medições de progresso',
             schema: {
                 type: 'array',
                 items: {
@@ -132,15 +132,15 @@ export function ApiGetHistory() {
 }
 
 /**
- * Decorator for the get all timelines endpoint
+ * Decorador para o endpoint de obter todas as timelines
  */
 export function ApiGetAllTimelines() {
     return applyDecorators(
-        ApiOperation({ summary: 'Get all timelines for a project' }),
+        ApiOperation({ summary: 'Obter todas as timelines de um projeto' }),
         ApiProjectParam(),
         ApiResponse({
             status: 200,
-            description: 'Returns all timelines for the project',
+            description: 'Retorna todas as timelines do projeto',
             schema: {
                 type: 'array',
                 items: { $ref: timelineResponseSchemaPath },
@@ -151,16 +151,16 @@ export function ApiGetAllTimelines() {
 }
 
 /**
- * Decorator for the create timeline endpoint
+ * Decorador para o endpoint de criar timeline
  */
 export function ApiCreateTimeline() {
     return applyDecorators(
-        ApiOperation({ summary: 'Create a new timeline' }),
+        ApiOperation({ summary: 'Criar uma nova timeline' }),
         ApiProjectParam(),
         ApiBody(createTimelineExample),
         ApiResponse({
             status: 201,
-            description: 'Timeline created successfully',
+            description: 'Timeline criada com sucesso',
             type: TimelineResponse,
         }),
         ApiResponse(validationErrorResponse),
@@ -170,16 +170,16 @@ export function ApiCreateTimeline() {
 }
 
 /**
- * Decorator for the get latest timeline endpoint
+ * Decorador para o endpoint de obter a timeline mais recente
  */
 export function ApiGetLatestTimeline() {
     return applyDecorators(
-        ApiOperation({ summary: 'Get the latest timeline for a project' }),
+        ApiOperation({ summary: 'Obter a timeline mais recente de um projeto' }),
         ApiProjectParam(),
         ApiFilterQuery(),
         ApiResponse({
             status: 200,
-            description: 'Returns the latest timeline with date range information',
+            description: 'Retorna a timeline mais recente com informações de intervalo de datas',
             type: LatestTimelineResponse,
         }),
         ApiResponse(timelineNotFoundResponse),
@@ -188,15 +188,15 @@ export function ApiGetLatestTimeline() {
 }
 
 /**
- * Decorator for the get dashboard endpoint
+ * Decorador para o endpoint de obter dashboard
  */
 export function ApiGetDashboard() {
     return applyDecorators(
-        ApiOperation({ summary: 'Get dashboard data for a project' }),
+        ApiOperation({ summary: 'Obter dados do dashboard para um projeto' }),
         ApiProjectParam(),
         ApiResponse({
             status: 200,
-            description: 'Returns dashboard data with timeline statistics',
+            description: 'Retorna dados do dashboard com estatísticas da timeline',
             type: DashboardResponse,
         }),
         ApiResponse(timelineNotFoundResponse)
@@ -204,16 +204,16 @@ export function ApiGetDashboard() {
 }
 
 /**
- * Decorator for the get one timeline endpoint
+ * Decorador para o endpoint de obter uma timeline específica
  */
 export function ApiGetOneTimeline() {
     return applyDecorators(
-        ApiOperation({ summary: 'Get a specific timeline' }),
+        ApiOperation({ summary: 'Obter uma timeline específica' }),
         ApiProjectParam(),
         ApiTimelineParam(),
         ApiResponse({
             status: 200,
-            description: 'Returns the timeline with all tasks and progress information',
+            description: 'Retorna a timeline com todas as tarefas e informações de progresso',
             type: TimelineResponse,
         }),
         ApiResponse(timelineNotFoundResponse)
@@ -221,17 +221,17 @@ export function ApiGetOneTimeline() {
 }
 
 /**
- * Decorator for the update timeline endpoint
+ * Decorador para o endpoint de atualizar timeline
  */
 export function ApiUpdateTimeline() {
     return applyDecorators(
-        ApiOperation({ summary: 'Update a timeline' }),
+        ApiOperation({ summary: 'Atualizar uma timeline' }),
         ApiProjectParam(),
         ApiTimelineParam(),
         ApiBody(updateTimelineExample),
         ApiResponse({
             status: 200,
-            description: 'Timeline updated successfully',
+            description: 'Timeline atualizada com sucesso',
             type: TimelineResponse,
         }),
         ApiResponse(forbiddenUpdateTimelineResponse),
@@ -241,16 +241,16 @@ export function ApiUpdateTimeline() {
 }
 
 /**
- * Decorator for the delete timeline endpoint
+ * Decorador para o endpoint de excluir timeline
  */
 export function ApiDeleteTimeline() {
     return applyDecorators(
-        ApiOperation({ summary: 'Delete a timeline' }),
+        ApiOperation({ summary: 'Excluir uma timeline' }),
         ApiProjectParam(),
         ApiTimelineParam(),
         ApiResponse({
             status: 204,
-            description: 'Timeline deleted successfully. No content returned.',
+            description: 'Timeline excluída com sucesso. Nenhum conteúdo retornado.',
         }),
         ApiResponse(forbiddenDeleteTimelineResponse),
         ApiResponse(timelineNotFoundResponse),

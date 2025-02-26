@@ -1,189 +1,189 @@
 /**
- * Standard error response schemas for API documentation
+ * Esquemas de resposta de erro padrão para documentação da API
  */
 
 /**
- * Not Found (404) error response
+ * Resposta de erro Not Found (404)
  */
 export const notFoundResponse = {
     status: 404,
-    description: 'Resource not found',
+    description: 'Recurso não encontrado',
     schema: {
         type: 'object',
         properties: {
             statusCode: { type: 'number', example: 404 },
-            message: { type: 'string', example: 'Resource not found' },
-            error: { type: 'string', example: 'Not Found' },
+            message: { type: 'string', example: 'Recurso não encontrado' },
+            error: { type: 'string', example: 'Não Encontrado' },
         },
     },
 }
 
 /**
- * Timeline Not Found (404) error response
+ * Resposta de erro Timeline Not Found (404)
  */
 export const timelineNotFoundResponse = {
     status: 404,
-    description: 'Timeline not found',
+    description: 'Timeline não encontrada',
     schema: {
         type: 'object',
         properties: {
             statusCode: { type: 'number', example: 404 },
-            message: { type: 'string', example: 'Timeline not found' },
-            error: { type: 'string', example: 'Not Found' },
+            message: { type: 'string', example: 'Timeline não encontrada' },
+            error: { type: 'string', example: 'Não Encontrado' },
         },
     },
 }
 
 /**
- * Project Not Found (404) error response
+ * Resposta de erro Project Not Found (404)
  */
 export const projectNotFoundResponse = {
     status: 404,
-    description: 'Project not found',
+    description: 'Projeto não encontrado',
     schema: {
         type: 'object',
         properties: {
             statusCode: { type: 'number', example: 404 },
-            message: { type: 'string', example: 'Project not found' },
-            error: { type: 'string', example: 'Not Found' },
+            message: { type: 'string', example: 'Projeto não encontrado' },
+            error: { type: 'string', example: 'Não Encontrado' },
         },
     },
 }
 
 /**
- * Task Not Found (404) error response
+ * Resposta de erro Task Not Found (404)
  */
 export const taskNotFoundResponse = {
     status: 404,
-    description: 'Timeline or task not found',
+    description: 'Timeline ou tarefa não encontrada',
     schema: {
         type: 'object',
         properties: {
             statusCode: { type: 'number', example: 404 },
-            message: { type: 'string', example: 'Task not found' },
-            error: { type: 'string', example: 'Not Found' },
+            message: { type: 'string', example: 'Tarefa não encontrada' },
+            error: { type: 'string', example: 'Não Encontrado' },
         },
     },
 }
 
 /**
- * Forbidden (403) error response
+ * Resposta de erro Forbidden (403)
  */
 export const forbiddenResponse = {
     status: 403,
-    description: 'Forbidden',
+    description: 'Proibido',
     schema: {
         type: 'object',
         properties: {
             statusCode: { type: 'number', example: 403 },
-            message: { type: 'string', example: 'You do not have the required permission' },
-            error: { type: 'string', example: 'Forbidden' },
+            message: { type: 'string', example: 'Você não tem a permissão necessária' },
+            error: { type: 'string', example: 'Proibido' },
         },
     },
 }
 
 /**
- * Forbidden Create Timeline (403) error response
+ * Resposta de erro Forbidden Create Timeline (403)
  */
 export const forbiddenCreateTimelineResponse = {
     status: 403,
-    description: 'Forbidden',
+    description: 'Proibido',
     schema: {
         type: 'object',
         properties: {
             statusCode: { type: 'number', example: 403 },
-            message: { type: 'string', example: 'You do not have the permission to create a timeline' },
-            error: { type: 'string', example: 'Forbidden' },
+            message: { type: 'string', example: 'Você não tem permissão para criar uma timeline' },
+            error: { type: 'string', example: 'Proibido' },
         },
     },
 }
 
 /**
- * Forbidden Update Timeline (403) error response
+ * Resposta de erro Forbidden Update Timeline (403)
  */
 export const forbiddenUpdateTimelineResponse = {
     status: 403,
-    description: 'Forbidden',
+    description: 'Proibido',
     schema: {
         type: 'object',
         properties: {
             statusCode: { type: 'number', example: 403 },
-            message: { type: 'string', example: 'You do not have the permission to update a timeline' },
-            error: { type: 'string', example: 'Forbidden' },
+            message: { type: 'string', example: 'Você não tem permissão para atualizar uma timeline' },
+            error: { type: 'string', example: 'Proibido' },
         },
     },
 }
 
 /**
- * Forbidden Delete Timeline (403) error response
+ * Resposta de erro Forbidden Delete Timeline (403)
  */
 export const forbiddenDeleteTimelineResponse = {
     status: 403,
-    description: 'Forbidden',
+    description: 'Proibido',
     schema: {
         type: 'object',
         properties: {
             statusCode: { type: 'number', example: 403 },
-            message: { type: 'string', example: 'You do not have the permission to delete a timeline' },
-            error: { type: 'string', example: 'Forbidden' },
+            message: { type: 'string', example: 'Você não tem permissão para excluir uma timeline' },
+            error: { type: 'string', example: 'Proibido' },
         },
     },
 }
 
 /**
- * Forbidden Delete Progress (403) error response
+ * Resposta de erro Forbidden Delete Progress (403)
  */
 export const forbiddenDeleteProgressResponse = {
     status: 403,
-    description: 'Forbidden',
+    description: 'Proibido',
     schema: {
         type: 'object',
         properties: {
             statusCode: { type: 'number', example: 403 },
-            message: { type: 'string', example: 'You do not have permission to delete progress' },
-            error: { type: 'string', example: 'Forbidden' },
+            message: { type: 'string', example: 'Você não tem permissão para excluir progresso' },
+            error: { type: 'string', example: 'Proibido' },
         },
     },
 }
 
 /**
- * Forbidden Update Measurement (403) error response
+ * Resposta de erro Forbidden Update Measurement (403)
  */
 export const forbiddenUpdateMeasurementResponse = {
     status: 403,
-    description: 'Forbidden',
+    description: 'Proibido',
     schema: {
         type: 'object',
         properties: {
             statusCode: { type: 'number', example: 403 },
-            message: { type: 'string', example: 'You do not have the permission to update a measurement' },
-            error: { type: 'string', example: 'Forbidden' },
+            message: { type: 'string', example: 'Você não tem permissão para atualizar uma medição' },
+            error: { type: 'string', example: 'Proibido' },
         },
     },
 }
 
 /**
- * Bad Request (400) error response
+ * Resposta de erro Bad Request (400)
  */
 export const badRequestResponse = {
     status: 400,
-    description: 'Invalid input',
+    description: 'Entrada inválida',
     schema: {
         type: 'object',
         properties: {
             statusCode: { type: 'number', example: 400 },
-            message: { type: 'string', example: 'Invalid input data' },
-            error: { type: 'string', example: 'Bad Request' },
+            message: { type: 'string', example: 'Dados de entrada inválidos' },
+            error: { type: 'string', example: 'Requisição Inválida' },
         },
     },
 }
 
 /**
- * Validation Error (400) error response
+ * Resposta de erro Validation Error (400)
  */
 export const validationErrorResponse = {
     status: 400,
-    description: 'Invalid input',
+    description: 'Entrada inválida',
     schema: {
         type: 'object',
         properties: {
@@ -194,7 +194,7 @@ export const validationErrorResponse = {
                     type: 'object',
                     properties: {
                         property: { type: 'string', example: 'tasks[0].weight' },
-                        message: { type: 'string', example: 'Weight must be between 0 and 1' },
+                        message: { type: 'string', example: 'O peso deve estar entre 0 e 1' },
                     },
                 },
             },
@@ -203,17 +203,17 @@ export const validationErrorResponse = {
 }
 
 /**
- * Progress Validation Error (400) error response
+ * Resposta de erro Progress Validation Error (400)
  */
 export const progressValidationErrorResponse = {
     status: 400,
-    description: 'Invalid input',
+    description: 'Entrada inválida',
     schema: {
         type: 'object',
         properties: {
             statusCode: { type: 'number', example: 400 },
-            message: { type: 'string', example: 'Progress percentage must be between 0 and 1' },
-            error: { type: 'string', example: 'Bad Request' },
+            message: { type: 'string', example: 'A porcentagem de progresso deve estar entre 0 e 1' },
+            error: { type: 'string', example: 'Requisição Inválida' },
         },
     },
 }

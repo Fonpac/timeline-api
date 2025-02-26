@@ -2,168 +2,168 @@ import { ApiProperty } from '@nestjs/swagger'
 import { getSchemaPath } from '@nestjs/swagger'
 
 /**
- * Response model for timeline progress
+ * Modelo de resposta para progresso da timeline
  */
 export class TimelineProgressResponse {
     @ApiProperty({
         example: 75,
-        description: 'Progress percentage (0-100)',
+        description: 'Porcentagem de progresso (0-100)',
     })
     progress_percentage: number
 
     @ApiProperty({
         example: '2023-01-15T00:00:00Z',
-        description: 'Date when the measurement was taken',
+        description: 'Data em que a medição foi realizada',
     })
     measurement_date: Date
 
     @ApiProperty({
         example: '2023-01-15T12:30:45Z',
-        description: 'Date when the measurement was published',
+        description: 'Data em que a medição foi publicada',
     })
     publication_date: Date
 }
 
 /**
- * Response model for task data
+ * Modelo de resposta para dados de tarefa
  */
 export class TaskResponse {
     @ApiProperty({
         example: '20',
-        description: 'Unique identifier for the task',
+        description: 'Identificador único para a tarefa',
     })
     id: string
 
     @ApiProperty({
-        example: 'Foundation work',
-        description: 'Name of the task',
+        example: 'Trabalho de fundação',
+        description: 'Nome da tarefa',
     })
     name: string
 
     @ApiProperty({
         example: '2023-01-10T00:00:00Z',
-        description: 'Planned start date of the task',
+        description: 'Data de início planejada da tarefa',
     })
     start_date: Date
 
     @ApiProperty({
         example: '2023-02-15T00:00:00Z',
-        description: 'Planned end date of the task',
+        description: 'Data de término planejada da tarefa',
     })
     end_date: Date
 
     @ApiProperty({
         example: 0.25,
-        description: 'Weight of the task relative to the entire project (0-1)',
+        description: 'Peso da tarefa em relação ao projeto inteiro (0-1)',
     })
     weight: number
 
     @ApiProperty({
         example: 36,
-        description: 'Duration of the task in days',
+        description: 'Duração da tarefa em dias',
     })
     duration: number
 
     @ApiProperty({
         example: 15000,
-        description: 'Cost of the task (only visible to admin and owner)',
+        description: 'Custo da tarefa (visível apenas para admin e proprietário)',
         required: false,
     })
     cost?: number
 
     @ApiProperty({
         example: '1.2.3',
-        description: 'Hierarchical position of the task',
+        description: 'Posição hierárquica da tarefa',
         required: false,
     })
     hierarchy?: string
 
     @ApiProperty({
         example: 0.65,
-        description: 'Planned progress percentage (0-1)',
+        description: 'Porcentagem de progresso planejada (0-1)',
     })
     planned_progress: number
 
     @ApiProperty({
         example: 0.6,
-        description: 'Actual progress percentage (0-1)',
+        description: 'Porcentagem de progresso real (0-1)',
     })
     actual_progress: number
 
     @ApiProperty({
         example: false,
-        description: 'Whether the task was edited today',
+        description: 'Se a tarefa foi editada hoje',
     })
     is_edited_today: boolean
 
     @ApiProperty({
         example: '2023-01-12T00:00:00Z',
-        description: 'Actual start date of the task',
+        description: 'Data de início real da tarefa',
         required: false,
     })
     actual_start_date?: Date
 
     @ApiProperty({
         example: '2023-02-20T00:00:00Z',
-        description: 'Actual end date of the task',
+        description: 'Data de término real da tarefa',
         required: false,
     })
     actual_end_date?: Date
 
     @ApiProperty({
         example: 'started',
-        description: 'Current execution status of the task',
+        description: 'Status de execução atual da tarefa',
         enum: ['planned', 'started', 'completed'],
     })
     execution_status: 'planned' | 'started' | 'completed'
 
     @ApiProperty({
         example: 'delayed',
-        description: 'Overall status comparing planned vs actual progress',
+        description: 'Status geral comparando progresso planejado vs real',
         enum: ['on_time', 'ahead', 'delayed'],
     })
     overall_status: 'on_time' | 'ahead' | 'delayed'
 
     @ApiProperty({
         type: [TaskResponse],
-        description: 'List of subtasks',
+        description: 'Lista de subtarefas',
         required: false,
     })
     subtasks?: TaskResponse[]
 }
 
 /**
- * Response model for timeline data
+ * Modelo de resposta para dados da timeline
  */
 export class TimelineResponse {
     @ApiProperty({
         example: '20',
-        description: 'Unique identifier for the timeline',
+        description: 'Identificador único para a timeline',
     })
     id: string
 
     @ApiProperty({
-        example: 'Construction Phase 1',
-        description: 'Name of the timeline',
+        example: 'Fase 1 de Construção',
+        description: 'Nome da timeline',
     })
     name: string
 
     @ApiProperty({
         example: 'USD',
-        description: 'Currency used for cost calculations',
+        description: 'Moeda usada para cálculos de custo',
         required: false,
     })
     currency?: string
 
     @ApiProperty({
         example: '2023-01-01T00:00:00Z',
-        description: 'Creation date of the timeline',
+        description: 'Data de criação da timeline',
     })
     created_at: Date
 
     @ApiProperty({
         example: { '2023-01-15': 0.25, '2023-02-01': 0.5, '2023-02-15': 0.75 },
-        description: 'Planned progress percentages by date',
+        description: 'Porcentagens de progresso planejadas por data',
     })
     planned_progress: Record<string, number>
 
@@ -175,77 +175,77 @@ export class TimelineResponse {
                 publication_date: '2023-01-15T12:30:45Z',
             },
         },
-        description: 'Actual progress measurements by date',
+        description: 'Medições de progresso real por data',
         required: false,
     })
     actual_progress?: Record<string, TimelineProgressResponse>
 
     @ApiProperty({
         type: [TaskResponse],
-        description: 'List of tasks in the timeline',
+        description: 'Lista de tarefas na timeline',
     })
     tasks: TaskResponse[]
 }
 
 /**
- * Response model for date range
+ * Modelo de resposta para intervalo de datas
  */
 export class DateRangeResponse {
     @ApiProperty({
         example: '2023-01-10T00:00:00Z',
-        description: 'Start date of the timeline',
+        description: 'Data de início da timeline',
     })
     start: Date
 
     @ApiProperty({
         example: '2023-12-31T00:00:00Z',
-        description: 'End date of the timeline',
+        description: 'Data de término da timeline',
     })
     end: Date
 }
 
 /**
- * Response model for latest timeline
+ * Modelo de resposta para a timeline mais recente
  */
 export class LatestTimelineResponse {
     @ApiProperty({
         type: DateRangeResponse,
-        description: 'Date range of the timeline',
+        description: 'Intervalo de datas da timeline',
     })
     dateRange: DateRangeResponse
 
     @ApiProperty({
         type: TimelineResponse,
-        description: 'The latest timeline data',
+        description: 'Dados da timeline mais recente',
     })
     timeline: TimelineResponse
 }
 
 /**
- * Response model for dashboard data
+ * Modelo de resposta para dados do dashboard
  */
 export class DashboardResponse {
     @ApiProperty({
         example: '2023-01-10T00:00:00Z',
-        description: 'Start date of the project',
+        description: 'Data de início do projeto',
     })
     start_date: Date
 
     @ApiProperty({
         example: '2023-12-31T00:00:00Z',
-        description: 'End date of the project',
+        description: 'Data de término do projeto',
     })
     end_date: Date
 
     @ApiProperty({
         example: '2023-06-15',
-        description: 'Current date in YYYY-MM-DD format',
+        description: 'Data atual no formato AAAA-MM-DD',
     })
     today: string
 
     @ApiProperty({
         example: 355,
-        description: 'Total number of days in the project',
+        description: 'Número total de dias no projeto',
     })
     total_days: number
 
