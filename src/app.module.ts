@@ -1,9 +1,11 @@
-import { Module } from '@nestjs/common'
+import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common'
 import { ConfigModule } from '@nestjs/config'
 import { MongooseModule } from '@nestjs/mongoose'
 import { TimelinesModule } from './timelines/timelines.module'
 import { PrismaModule } from './prisma/prisma.module'
 import { AuthModule } from './auth/auth.module'
+import { LoggingModule } from './logging/logging.module'
+import { RequestLoggerMiddleware } from './logging/request-logger.middleware'
 import * as mongoose from 'mongoose'
 import * as fs from 'fs'
 import * as path from 'path'
@@ -33,9 +35,15 @@ import * as path from 'path'
                 }
             },
         }),
+        LoggingModule,
         PrismaModule,
         AuthModule,
         TimelinesModule,
     ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+    configure(consumer: MiddlewareConsumer) {
+        // Apply the request logger middleware to all routes
+        consumer.apply(RequestLoggerMiddleware).forRoutes('*')
+    }
+}

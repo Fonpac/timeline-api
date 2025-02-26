@@ -4,9 +4,25 @@ import { AppModule } from './app.module'
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'
 import { apiReference } from '@scalar/nestjs-api-reference'
 import { AuthGuard } from './auth/auth.guard'
+import { LoggingService } from './logging/logging.service'
+import { GlobalExceptionFilter } from './logging/global-exception.filter'
 
 async function bootstrap() {
-    const app = await NestFactory.create(AppModule)
+    const app = await NestFactory.create(AppModule, {
+        // Disable the default logger
+        logger: false,
+    })
+
+    // Get the custom logger from the app context
+    const logger = app.get(LoggingService)
+    // Set the custom logger as the application logger
+    app.useLogger(logger)
+
+    // Register the global exception filter
+    app.useGlobalFilters(new GlobalExceptionFilter(logger))
+
+    // Log application startup
+    logger.log('Application starting up', 'Bootstrap')
 
     // Configuração do CORS - permitir acesso de qualquer origem
     app.enableCors({
@@ -58,8 +74,11 @@ async function bootstrap() {
 
     const port = process.env.PORT || 3000
     await app.listen(port)
-    console.log(`Aplicação rodando em: http://localhost:${port}`)
-    console.log(`Documentação Scalar disponível em: http://localhost:${port}/api-docs`)
-    console.log(`Documentação Swagger disponível em: http://localhost:${port}/swagger`)
+    logger.log(`Application running on port ${port}`, 'Bootstrap')
+    logger.log(`Scalar API documentation available at: http://localhost:${port}/api-docs`, 'Bootstrap')
+    logger.log(`Swagger documentation available at: http://localhost:${port}/swagger`, 'Bootstrap')
 }
-bootstrap()
+bootstrap().catch((err) => {
+    console.error('Error starting application:', err)
+    process.exit(1)
+})
