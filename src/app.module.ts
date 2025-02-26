@@ -6,7 +6,6 @@ import { PrismaModule } from './prisma/prisma.module'
 import { AuthModule } from './auth/auth.module'
 import { LoggingModule } from './logging/logging.module'
 import { RequestLoggerMiddleware } from './logging/request-logger.middleware'
-import * as mongoose from 'mongoose'
 import * as fs from 'fs'
 import * as path from 'path'
 

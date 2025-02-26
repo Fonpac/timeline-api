@@ -1,53 +1,53 @@
-# Logging System for Timeline API
+# Sistema de Logging para a API Timeline
 
-This document describes the logging system implemented for the Timeline API, which is designed to work seamlessly with AWS CloudWatch Log Insights when deployed to ECS.
+Este documento descreve o sistema de logging implementado para a API Timeline, que foi projetado para funcionar perfeitamente com o AWS CloudWatch Log Insights quando implantado no ECS.
 
-## Overview
+## Visão Geral
 
-The logging system uses Winston as the logging library and is integrated with NestJS through the `nest-winston` package. It provides structured logging that is optimized for CloudWatch Log Insights queries.
+O sistema de logging utiliza Winston como biblioteca de logging e é integrado com o NestJS através do pacote `nest-winston`. Ele fornece logging estruturado que é otimizado para consultas no CloudWatch Log Insights.
 
-## Features
+## Funcionalidades
 
-- **Structured JSON Logging**: All logs are formatted as JSON objects in production and alpha environments, making them easily queryable in CloudWatch Log Insights.
-- **Simple Development Logs**: In development mode, logs are simplified to show only essential information.
-- **Request/Response Logging**: All HTTP requests and responses are automatically logged with metadata.
-- **Error Tracking**: All exceptions are captured and logged with stack traces.
-- **Request ID Tracking**: Each request is assigned a unique ID that is included in all related logs.
-- **Environment-Aware Configuration**: Different log formats based on the environment (development vs. production/alpha).
-- **Sensitive Data Redaction**: Automatically redacts sensitive information like passwords and tokens.
+- **Logging JSON Estruturado**: Todos os logs são formatados como objetos JSON nos ambientes de produção e alpha, tornando-os facilmente consultáveis no CloudWatch Log Insights.
+- **Logs Simplificados em Desenvolvimento**: No modo de desenvolvimento, os logs são simplificados para mostrar apenas informações essenciais.
+- **Logging de Requisições/Respostas**: Todas as requisições HTTP e respostas são automaticamente registradas com metadados.
+- **Rastreamento de Erros**: Todas as exceções são capturadas e registradas com stack traces.
+- **Rastreamento de ID de Requisição**: Cada requisição recebe um ID único que é incluído em todos os logs relacionados.
+- **Configuração Sensível ao Ambiente**: Diferentes formatos de log baseados no ambiente (desenvolvimento vs. produção/alpha).
+- **Redação de Dados Sensíveis**: Automaticamente oculta informações sensíveis como senhas e tokens.
 
-## Log Format
+## Formato de Log
 
-### Production/Alpha Format (CloudWatch)
+### Formato de Produção/Alpha (CloudWatch)
 
-In production and alpha environments, logs are formatted as JSON objects with the following structure:
+Nos ambientes de produção e alpha, os logs são formatados como objetos JSON com a seguinte estrutura:
 
 ```json
 {
     "timestamp": "2023-02-26T12:34:56.789Z",
     "level": "info",
-    "message": "The log message",
+    "message": "A mensagem de log",
     "metadata": "{\"context\":\"HTTP\",\"requestId\":\"123e4567-e89b-12d3-a456-426614174000\",\"method\":\"GET\",\"url\":\"/api/timelines\",\"statusCode\":200,\"responseTime\":\"42ms\"}"
 }
 ```
 
-This format is optimized for CloudWatch Log Insights queries.
+Este formato é otimizado para consultas no CloudWatch Log Insights.
 
-### Development Format
+### Formato de Desenvolvimento
 
-In development mode, logs are simplified to a more readable format:
+No modo de desenvolvimento, os logs são simplificados para um formato mais legível:
 
 ```
-2023-02-26 12:34:56 - INFO: [HTTP] Incoming request: GET /api/timelines
+2023-02-26 12:34:56 - INFO: [HTTP] Requisição recebida: GET /api/timelines
 ```
 
-This makes it easier to read logs during local development without the extra metadata.
+Isso torna mais fácil a leitura dos logs durante o desenvolvimento local sem os metadados extras.
 
-## CloudWatch Log Insights Queries
+## Consultas no CloudWatch Log Insights
 
-Here are some example queries you can use in CloudWatch Log Insights:
+Aqui estão alguns exemplos de consultas que você pode usar no CloudWatch Log Insights:
 
-### Find all logs for a specific request ID
+### Encontrar todos os logs para um ID de requisição específico
 
 ```
 fields @timestamp, @message
@@ -56,7 +56,7 @@ fields @timestamp, @message
 | sort @timestamp asc
 ```
 
-### Find all error logs
+### Encontrar todos os logs de erro
 
 ```
 fields @timestamp, @message
@@ -64,7 +64,7 @@ fields @timestamp, @message
 | sort @timestamp desc
 ```
 
-### Find slow responses (>500ms)
+### Encontrar respostas lentas (>500ms)
 
 ```
 fields @timestamp, @message
@@ -73,7 +73,7 @@ fields @timestamp, @message
 | sort responseTime desc
 ```
 
-### Count requests by status code
+### Contar requisições por código de status
 
 ```
 fields @timestamp, @message
@@ -82,38 +82,38 @@ fields @timestamp, @message
 | sort count desc
 ```
 
-## Local Development
+## Desenvolvimento Local
 
-In development mode, logs are printed to the console in a simplified format that shows only the timestamp, log level, context (if available), and message. This makes the logs much more readable during local development.
+No modo de desenvolvimento, os logs são impressos no console em um formato simplificado que mostra apenas o timestamp, nível de log, contexto (se disponível) e mensagem. Isso torna os logs muito mais legíveis durante o desenvolvimento local.
 
-## Usage in Code
+## Uso no Código
 
-To use the logger in your code:
+Para usar o logger no seu código:
 
 ```typescript
 import { Injectable } from '@nestjs/common'
 import { LoggingService } from '../logging/logging.service'
 
 @Injectable()
-export class YourService {
+export class SeuServico {
     constructor(private readonly logger: LoggingService) {}
 
-    someMethod() {
-        this.logger.log('This is an info message', 'YourService', {
-            additionalData: 'some value',
+    algumMetodo() {
+        this.logger.log('Esta é uma mensagem de informação', 'SeuServico', {
+            dadosAdicionais: 'algum valor',
         })
 
         try {
-            // Some code that might throw
+            // Algum código que pode lançar exceção
         } catch (error) {
-            this.logger.error('An error occurred', error.stack, 'YourService', {
-                additionalData: 'some value',
+            this.logger.error('Ocorreu um erro', error.stack, 'SeuServico', {
+                dadosAdicionais: 'algum valor',
             })
         }
     }
 }
 ```
 
-## ECS Configuration
+## Configuração ECS
 
-When deployed to ECS, the logs will automatically be sent to CloudWatch. No additional configuration is needed in the application code, as ECS handles the log forwarding to CloudWatch.
+Quando implantado no ECS, os logs serão automaticamente enviados para o CloudWatch. Nenhuma configuração adicional é necessária no código da aplicação, pois o ECS gerencia o encaminhamento dos logs para o CloudWatch.
