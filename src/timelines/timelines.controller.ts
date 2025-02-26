@@ -23,6 +23,7 @@ import { DeleteProgressDto } from './dto/delete-progress.dto'
 import { FilterQueryDto } from './dto/filter-query.dto'
 import { ApiTags } from '@nestjs/swagger'
 import { processTimelineToReturn } from './utils/timeline-processor'
+import { Request } from '../auth'
 
 // Import custom decorators
 import {
@@ -46,40 +47,34 @@ export class TimelinesController {
 
     @Get('history')
     @ApiGetHistory()
-    async getHistoryProjects(@Param('projectId') projectId: string, @Req() request: any) {
-        const timelines = await this.timelinesService.getHistoryProjects(projectId)
-
+    async getHistoryProjects(@Param('projectId') projectId: string, @Req() request: Request) {
         // Extract user permission from request (adjust based on your auth implementation)
         const permission = request.user?.permission || 'employee'
-
-        return timelines
+        return this.timelinesService.getHistoryProjects(projectId)
     }
 
     @Get()
     @ApiGetAllTimelines()
-    async getAll(@Param('projectId') projectId: string, @Req() request: any) {
+    async getAll(@Param('projectId') projectId: string, @Req() request: Request) {
         // Extract user permission from request (adjust based on your auth implementation)
         const permission = request.user?.permission || 'employee'
-
-        const timelines = await this.timelinesService.getAll(projectId, permission)
-        return timelines
+        return this.timelinesService.getAll(projectId, permission)
     }
 
     @Post()
     @ApiCreateTimeline()
-    async create(@Param('projectId') projectId: string, @Body() createTimelineDto: CreateTimelineDto, @Req() request: any) {
-        // Check permissions (adjust based on your auth implementation)
-        if (request.user?.permission !== 'admin' && request.user?.permission !== 'owner') {
-            throw new ForbiddenException('You do not have the permission to create a timeline')
-        }
-
+    async create(@Param('projectId') projectId: string, @Body() createTimelineDto: CreateTimelineDto, @Req() request: Request) {
         try {
+            if (request.user?.permission !== 'admin' && request.user?.permission !== 'owner') {
+                throw new ForbiddenException('Only admin and owner can create timelines')
+            }
+
             const timeline = await this.timelinesService.create(projectId, createTimelineDto)
             return processTimelineToReturn(timeline, request.user?.permission || 'employee')
         } catch (error) {
             if (error.name === 'ValidationError') {
                 throw new BadRequestException({ code: 'VALIDATION', errors: error.errors })
-            } else if (error.name === 'DurationZeroError') {
+            } else if (error.name === 'TaskDurationZeroError') {
                 throw new BadRequestException({ code: 'TASK_DURATION_ZERO', task: error.task })
             }
             throw error
@@ -88,34 +83,15 @@ export class TimelinesController {
 
     @Get('latest')
     @ApiGetLatestTimeline()
-    async getLatest(@Param('projectId') projectId: string, @Query() filterQueryDto: FilterQueryDto, @Req() request: any) {
+    async getLatest(@Param('projectId') projectId: string, @Query() filterQueryDto: FilterQueryDto, @Req() request: Request) {
         const timeline = await this.timelinesService.getLatest(projectId)
 
         if (!timeline) {
-            throw new NotFoundException('Timeline not found')
+            throw new NotFoundException('No timeline found for this project')
         }
 
-        // Process filters and return timeline
-        // Note: You'll need to implement filter processing in your service
         const permission = request.user?.permission || 'employee'
-
-        // Calculate date range
-        let minStartDate = null
-        let maxEndDate = null
-
-        if (timeline.tasks.length > 0) {
-            minStartDate = timeline.tasks.reduce((acc, task) => (task.start_date < acc ? task.start_date : acc), timeline.tasks[0].start_date)
-
-            maxEndDate = timeline.tasks.reduce((acc, task) => (task.end_date > acc ? task.end_date : acc), timeline.tasks[0].end_date)
-        }
-
-        return {
-            dateRange: {
-                start: minStartDate,
-                end: maxEndDate,
-            },
-            timeline: processTimelineToReturn(timeline, permission, filterQueryDto.score_on_date),
-        }
+        return processTimelineToReturn(timeline, permission)
     }
 
     @Get('dashboard')
@@ -126,7 +102,7 @@ export class TimelinesController {
 
     @Get(':timelineId')
     @ApiGetOneTimeline()
-    async getOne(@Param('projectId') projectId: string, @Param('timelineId') timelineId: string, @Req() request: any) {
+    async getOne(@Param('projectId') projectId: string, @Param('timelineId') timelineId: string, @Req() request: Request) {
         const timeline = await this.timelinesService.getOne(projectId, timelineId)
 
         if (!timeline) {
@@ -143,7 +119,7 @@ export class TimelinesController {
         @Param('projectId') projectId: string,
         @Param('timelineId') timelineId: string,
         @Body() updateTimelineDto: UpdateTimelineDto,
-        @Req() request: any
+        @Req() request: Request
     ) {
         // Check permissions
         if (request.user?.permission !== 'admin' && request.user?.permission !== 'owner') {
@@ -162,7 +138,7 @@ export class TimelinesController {
 
     @Delete(':timelineId')
     @ApiDeleteTimeline()
-    async deleteOne(@Param('projectId') projectId: string, @Param('timelineId') timelineId: string, @Req() request: any) {
+    async deleteOne(@Param('projectId') projectId: string, @Param('timelineId') timelineId: string, @Req() request: Request) {
         // Check permissions
         if (request.user?.permission !== 'owner') {
             throw new ForbiddenException('You do not have the permission to delete a timeline')
@@ -178,7 +154,7 @@ export class TimelinesController {
         @Param('projectId') projectId: string,
         @Param('timelineId') timelineId: string,
         @Body() deleteProgressDto: DeleteProgressDto,
-        @Req() request: any
+        @Req() request: Request
     ) {
         // Check permissions
         if (request.user?.permission !== 'admin' && request.user?.permission !== 'owner') {
@@ -195,7 +171,7 @@ export class TimelinesController {
         @Param('timelineId') timelineId: string,
         @Param('taskId') taskId: string,
         @Body() updateMeasurementDto: UpdateMeasurementDto,
-        @Req() request: any
+        @Req() request: Request
     ) {
         // Check permissions
         if (request.user?.permission !== 'admin' && request.user?.permission !== 'owner') {
@@ -211,7 +187,7 @@ export class TimelinesController {
         @Param('projectId') projectId: string,
         @Param('timelineId') timelineId: string,
         @Body() bulkUpdateTaskDto: BulkUpdateTaskDto[],
-        @Req() request: any
+        @Req() request: Request
     ) {
         // Check permissions
         if (request.user?.permission !== 'admin' && request.user?.permission !== 'owner') {

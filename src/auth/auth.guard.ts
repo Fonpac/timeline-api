@@ -2,18 +2,12 @@ import { Injectable, CanActivate, ExecutionContext, UnauthorizedException } from
 import { Reflector } from '@nestjs/core'
 import { JwtService } from '@nestjs/jwt'
 import { PrismaService } from '../prisma/prisma.service'
-import { Request } from 'express'
+import { Request, ContextData } from './types'
 
 interface PayloadData {
     id: number
     name: string
     email: string
-}
-
-interface ContextData {
-    userId: string
-    permission?: string
-    canEditTimeline?: boolean
 }
 
 @Injectable()
@@ -31,7 +25,7 @@ export class AuthGuard implements CanActivate {
             return true
         }
 
-        const request = context.switchToHttp().getRequest()
+        const request = context.switchToHttp().getRequest<Request>()
         const token = this.extractTokenFromHeader(request)
 
         if (!token) {
