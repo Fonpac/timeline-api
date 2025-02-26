@@ -1,0 +1,48 @@
+{
+  "name": "timeline-api",
+  "version": "1.0.0",
+  "description": "API para gerenciamento de timelines de projetos",
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "nest build",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "start": "nest start",
+    "dev": "nest start --watch",
+    "start:debug": "nest start --debug --watch",
+    "start:prod": "node dist/main",
+    "lint": "eslint \"{src,apps,libs,test}/**/*.ts\"",
+    "test": "jest",
+    "prisma:generate": "prisma generate",
+    "prisma:pull": "prisma db pull",
+    "prisma:studio": "prisma studio"
+  },
+  "keywords": [
+    "nestjs",
+    "prisma",
+    "mongoose",
+    "timeline",
+    "api"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@nestjs/common": "^11.0.10",
+    "@nestjs/config": "^4.0.0",
+    "@nestjs/core": "^11.0.10",
+    "@nestjs/mongoose": "^11.0.1",
+    "@nestjs/platform-express": "^11.0.10",
+    "@nestjs/swagger": "^11.0.5",
+    "@prisma/client": "^6.4.1",
+    "@scalar/nestjs-api-reference": "^0.3.184",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.1",
+    "mongoose": "^8.10.2",
+    "prisma": "^6.4.1",
+    "reflect-metadata": "^0.2.2",
+    "swagger-ui-express": "^5.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.5",
+    "typescript": "^5.7.3"
+  }
+}
