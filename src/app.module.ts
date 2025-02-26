@@ -5,6 +5,7 @@ import { TimelinesModule } from './timelines/timelines.module'
 import { PrismaModule } from './prisma/prisma.module'
 import { AuthModule } from './auth/auth.module'
 import { LoggingModule } from './logging/logging.module'
+import { HealthModule } from './health/health.module'
 import { RequestLoggerMiddleware } from './logging/request-logger.middleware'
 import * as fs from 'fs'
 import * as path from 'path'
@@ -38,6 +39,7 @@ import * as path from 'path'
         PrismaModule,
         AuthModule,
         TimelinesModule,
+        HealthModule,
     ],
 })
 export class AppModule implements NestModule {
