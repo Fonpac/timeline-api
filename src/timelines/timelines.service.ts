@@ -4,6 +4,8 @@ import { Model } from 'mongoose';
 import { Timeline, ITimeline } from './entities/timeline.schema';
 import { CreateTimelineDto } from './dto/create-timeline.dto';
 import { processTimelineToReturn } from './utils/timeline-processor';
+import { startOfDay } from 'date-fns';
+import { dateToString } from './utils/timeline-processor';
 
 @Injectable()
 export class TimelinesService {
@@ -17,7 +19,7 @@ export class TimelinesService {
       .sort({ created_at: -1 });
 
     if (timelines.length === 0) {
-      throw new NotFoundException('Timeline não encontrada');
+      throw new NotFoundException('Timeline not found');
     }
 
     const history = timelines
@@ -52,10 +54,11 @@ export class TimelinesService {
   }
 
   async create(projectId: string, createTimelineDto: CreateTimelineDto) {
-    // Criar no MongoDB
+    // Create in MongoDB
     const mongoTimeline = new this.timelineModel({
       project_id: projectId,
       name: createTimelineDto.name,
+      currency: createTimelineDto.currency || 'BRL',
       created_at: new Date(),
       created_by: 1, // Default value or get from auth context
       planned_progress: {},
@@ -66,8 +69,11 @@ export class TimelinesService {
         end_date: new Date(task.endDate),
         weight: 1 / createTimelineDto.tasks.length,
         duration: Math.ceil((new Date(task.endDate).getTime() - new Date(task.startDate).getTime()) / (1000 * 60 * 60 * 24)),
+        cost: task.cost,
+        hierarchy: task.hierarchy,
         planned_progress: {},
         actual_progress: {},
+        subtasks: task.subtasks ? this.processSubtasks(task.subtasks) : [],
       })),
     });
     
@@ -75,21 +81,65 @@ export class TimelinesService {
     return savedTimeline;
   }
 
+  private processSubtasks(subtasks: any[]) {
+    return subtasks.map(subtask => ({
+      id: subtask.id,
+      name: subtask.name,
+      start_date: new Date(subtask.startDate),
+      end_date: new Date(subtask.endDate),
+      weight: 1 / subtasks.length,
+      duration: Math.ceil((new Date(subtask.endDate).getTime() - new Date(subtask.startDate).getTime()) / (1000 * 60 * 60 * 24)),
+      cost: subtask.cost,
+      hierarchy: subtask.hierarchy,
+      planned_progress: {},
+      actual_progress: {},
+      subtasks: subtask.subtasks ? this.processSubtasks(subtask.subtasks) : [],
+    }));
+  }
+
   async getLatest(projectId: string) {
     const timeline = await this.timelineModel
       .findOne({ project_id: projectId })
       .sort({ created_at: -1 });
 
-    if (!timeline) throw new NotFoundException('Timeline não encontrada');
+    if (!timeline) throw new NotFoundException('Timeline not found');
     return timeline;
   }
 
   async getDashboard(projectId: string) {
-    // Método a ser implementado posteriormente
-    // Deve retornar dados consolidados para o dashboard
+    const timeline = await this.timelineModel
+      .findOne({ project_id: projectId })
+      .sort({ created_at: -1 });
+
+    if (!timeline) throw new NotFoundException('Timeline not found');
+
+    const minStartDate = timeline.tasks.reduce((acc, task) => {
+      if (task.start_date < acc) {
+        return task.start_date;
+      }
+      return acc;
+    }, timeline.tasks[0].start_date);
+
+    const maxEndDate = timeline.tasks.reduce((acc, task) => {
+      if (task.end_date > acc) {
+        return task.end_date;
+      }
+      return acc;
+    }, timeline.tasks[0].end_date);
+
+    const days = Object.keys(timeline.planned_progress);
+    const today = dateToString(startOfDay(new Date()));
+    const beforeToday = days.filter(day => day < today);
+    const afterToday = days.filter(day => day >= today);
+
+    // This is a simplified version - you'll need to implement the full dashboard logic
     return {
-      message: 'Método a ser implementado',
-      projectId,
+      start_date: minStartDate,
+      end_date: maxEndDate,
+      today: startOfDay(new Date()).toISOString(),
+      total_days: days.length,
+      elapsed_days: beforeToday.length,
+      remaining_days: afterToday.length
     };
   }
 
@@ -99,37 +149,63 @@ export class TimelinesService {
       project_id: projectId 
     });
 
-    if (!timeline) throw new NotFoundException('Timeline não encontrada');
+    if (!timeline) throw new NotFoundException('Timeline not found');
     return timeline;
   }
 
   async updateTimeline(projectId: string, timelineId: string, updateData: any) {
-    // Atualizar no MongoDB
+    // Update in MongoDB
     const updatedTimeline = await this.timelineModel.findOneAndUpdate(
       { _id: timelineId, project_id: projectId },
       { $set: updateData },
       { new: true },
     );
 
-    if (!updatedTimeline) throw new NotFoundException('Timeline não encontrada');
+    if (!updatedTimeline) throw new NotFoundException('Timeline not found');
     return updatedTimeline;
   }
 
   async deleteOne(projectId: string, timelineId: string) {
     const result = await this.timelineModel.findOneAndDelete({ _id: timelineId, project_id: projectId });
     
-    if (!result) throw new NotFoundException('Timeline não encontrada');
-    return { message: 'Timeline excluída com sucesso' };
+    if (!result) throw new NotFoundException('Timeline not found');
+    return { message: 'Timeline deleted successfully' };
   }
 
-  async deleteOneDate(projectId: string, timelineId: string, date: string) {
-    // Método a ser implementado posteriormente
-    // Deve excluir o progresso de uma data específica
+  async deleteOneDate(projectId: string, timelineId: string, date: Date) {
+    const timeline = await this.timelineModel.findOne({
+      _id: timelineId,
+      project_id: projectId
+    });
+
+    if (!timeline) throw new NotFoundException('Timeline not found');
+
+    const dateToDelete = dateToString(startOfDay(date));
+
+    function deleteProgress(tasks: any[]): any[] {
+      return tasks.map(task => {
+        if (task.actual_progress?.[dateToDelete] !== undefined) {
+          task.actual_progress = Object.fromEntries(
+            Object.entries(task.actual_progress).filter(
+              ([key]) => key !== dateToDelete
+            )
+          );
+        }
+
+        if (Array.isArray(task.subtasks) && task.subtasks.length > 0) {
+          task.subtasks = deleteProgress(task.subtasks);
+        }
+
+        return task;
+      });
+    }
+
+    timeline.tasks = deleteProgress(timeline.tasks);
+    await timeline.save();
+
     return {
-      message: 'Método a ser implementado',
-      projectId,
-      timelineId,
-      date,
+      message: `Progress for date ${dateToDelete} successfully deleted`,
+      timeline: processTimelineToReturn(timeline, 'employee')
     };
   }
 
@@ -139,16 +215,16 @@ export class TimelinesService {
     taskId: string,
     updateData: any,
   ) {
-    // Atualizar no MongoDB
+    // Update in MongoDB
     const updatedTimeline = await this.timelineModel.findOneAndUpdate(
       { _id: timelineId, project_id: projectId, 'tasks.id': taskId },
       { $set: { 'tasks.$': { ...updateData } } },
       { new: true },
     );
 
-    if (!updatedTimeline) throw new NotFoundException('Timeline ou tarefa não encontrada');
+    if (!updatedTimeline) throw new NotFoundException('Timeline or task not found');
     
-    // Retornar a tarefa atualizada
+    // Return the updated task
     const updatedTask = updatedTimeline.tasks.find(task => task.id === taskId);
     return updatedTask;
   }
@@ -159,28 +235,28 @@ export class TimelinesService {
       project_id: projectId 
     });
 
-    if (!timeline) throw new NotFoundException('Timeline não encontrada');
+    if (!timeline) throw new NotFoundException('Timeline not found');
 
-    // Preparar as atualizações
+    // Prepare the updates
     const updateOperations = updates.map(update => ({
       updateOne: {
-        filter: { _id: timelineId, 'tasks.id': update.taskId },
-        update: { $set: { [`tasks.$.${Object.keys(update.data)[0]}`]: Object.values(update.data)[0] } }
+        filter: { _id: timelineId, 'tasks.id': update.task_id },
+        update: { $set: { [`tasks.$.${Object.keys(update)[1]}`]: Object.values(update)[1] } }
       }
     }));
 
-    // Aplicar as atualizações em lote
+    // Apply the updates in batch
     await this.timelineModel.bulkWrite(updateOperations);
 
-    // Buscar a timeline atualizada
+    // Fetch the updated timeline
     const updatedTimeline = await this.timelineModel.findOne({ 
       _id: timelineId, 
       project_id: projectId 
     });
 
-    // Retornar as tarefas atualizadas
+    // Return the updated tasks
     const updatedTasks = updates.map(update => 
-      updatedTimeline.tasks.find(task => task.id === update.taskId)
+      updatedTimeline.tasks.find(task => task.id === update.task_id)
     );
 
     return updatedTasks;

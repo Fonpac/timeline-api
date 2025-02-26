@@ -1,65 +1,65 @@
-import { IsString, IsOptional, IsDateString, IsArray, ValidateNested, IsBoolean, IsNumber } from 'class-validator';
-import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
+import { IsArray, IsBoolean, IsDateString, IsNumber, IsOptional, IsString, ValidateNested } from 'class-validator';
 
-export class CreateTaskDto {
-  @ApiProperty({ description: 'ID da tarefa' })
+class TaskDto {
+  @ApiProperty({ description: 'Task ID' })
   @IsString()
   id: string;
 
-  @ApiProperty({ description: 'Nome da tarefa' })
+  @ApiProperty({ description: 'Task name' })
   @IsString()
   name: string;
 
-  @ApiProperty({ description: 'Data de início da tarefa', example: '2023-01-01T00:00:00Z' })
+  @ApiProperty({ description: 'Task start date', example: '2023-01-01' })
   @IsDateString()
   startDate: string;
 
-  @ApiProperty({ description: 'Data de término da tarefa', example: '2023-01-31T00:00:00Z' })
+  @ApiProperty({ description: 'Task end date', example: '2023-01-31' })
   @IsDateString()
   endDate: string;
 
-  @ApiProperty({ description: 'Custo da tarefa', required: false })
+  @ApiProperty({ description: 'Task cost', required: false })
   @IsOptional()
   @IsNumber()
   cost?: number;
 
-  @ApiProperty({ description: 'Hierarquia da tarefa', required: false })
+  @ApiProperty({ description: 'Task hierarchy', required: false })
   @IsOptional()
   @IsString()
   hierarchy?: string;
 
-  @ApiProperty({ description: 'Subtarefas', type: [CreateTaskDto], required: false })
+  @ApiProperty({ description: 'Task subtasks', type: [TaskDto], required: false })
   @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => CreateTaskDto)
-  subtasks?: CreateTaskDto[];
+  @Type(() => TaskDto)
+  subtasks?: TaskDto[];
 }
 
 export class CreateTimelineDto {
-  @ApiProperty({ description: 'Nome da timeline' })
+  @ApiProperty({ description: 'Timeline name' })
   @IsString()
   name: string;
 
-  @ApiProperty({ description: 'Trabalha aos sábados', required: false, default: false })
-  @IsOptional()
-  @IsBoolean()
-  worksSaturdays?: boolean;
-
-  @ApiProperty({ description: 'Trabalha aos domingos', required: false, default: false })
-  @IsOptional()
-  @IsBoolean()
-  worksSundays?: boolean;
-
-  @ApiProperty({ description: 'Moeda', required: false, example: 'BRL' })
+  @ApiProperty({ description: 'Timeline currency', required: false, default: 'BRL' })
   @IsOptional()
   @IsString()
   currency?: string;
 
-  @ApiProperty({ description: 'Lista de tarefas', type: [CreateTaskDto] })
+  @ApiProperty({ description: 'Timeline tasks', type: [TaskDto] })
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => CreateTaskDto)
-  tasks: CreateTaskDto[];
+  @Type(() => TaskDto)
+  tasks: TaskDto[];
+
+  @ApiProperty({ description: 'Whether the timeline works on Saturdays', required: false, default: false })
+  @IsOptional()
+  @IsBoolean()
+  worksSaturdays?: boolean;
+
+  @ApiProperty({ description: 'Whether the timeline works on Sundays', required: false, default: false })
+  @IsOptional()
+  @IsBoolean()
+  worksSundays?: boolean;
 } 

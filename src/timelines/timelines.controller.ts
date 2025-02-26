@@ -1,133 +1,306 @@
-import { Controller, Get, Post, Patch, Delete, Param, Body, Query } from '@nestjs/common';
+import { 
+  Controller, 
+  Get, 
+  Post, 
+  Patch, 
+  Delete, 
+  Param, 
+  Body, 
+  Query, 
+  NotFoundException, 
+  ForbiddenException,
+  BadRequestException,
+  HttpCode,
+  HttpStatus,
+  Req,
+  ValidationPipe,
+  UsePipes
+} from '@nestjs/common';
 import { TimelinesService } from './timelines.service';
 import { CreateTimelineDto } from './dto/create-timeline.dto';
-import { ApiTags, ApiOperation, ApiParam, ApiBody, ApiResponse, ApiQuery } from '@nestjs/swagger';
+import { UpdateTimelineDto } from './dto/update-timeline.dto';
+import { UpdateMeasurementDto } from './dto/update-measurement.dto';
+import { BulkUpdateTaskDto } from './dto/bulk-update-task.dto';
+import { DeleteProgressDto } from './dto/delete-progress.dto';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody, ApiQuery } from '@nestjs/swagger';
+import { processTimelineToReturn } from './utils/timeline-processor';
 
-@ApiTags('Timelines')
+@ApiTags('timelines')
 @Controller('project/:projectId/timelines')
 export class TimelinesController {
   constructor(private readonly timelinesService: TimelinesService) {}
 
-  @ApiOperation({ summary: 'Obter histórico de projetos' })
-  @ApiParam({ name: 'projectId', description: 'ID do projeto' })
-  @ApiResponse({ status: 200, description: 'Histórico de projetos retornado com sucesso' })
-  @ApiResponse({ status: 404, description: 'Timeline não encontrada' })
   @Get('history')
-  getHistoryProjects(@Param('projectId') projectId: string) {
-    return this.timelinesService.getHistoryProjects(projectId);
+  @ApiOperation({ summary: 'Get timeline history for a project' })
+  @ApiParam({ name: 'projectId', description: 'Project ID' })
+  @ApiResponse({ status: 200, description: 'Returns timeline history' })
+  @ApiResponse({ status: 404, description: 'Timeline not found' })
+  async getHistoryProjects(@Param('projectId') projectId: string, @Req() request: any) {
+    const timelines = await this.timelinesService.getHistoryProjects(projectId);
+    
+    // Extract user permission from request (adjust based on your auth implementation)
+    const permission = request.user?.permission || 'employee';
+    
+    return timelines;
   }
 
-  @ApiOperation({ summary: 'Obter todas as timelines' })
-  @ApiParam({ name: 'projectId', description: 'ID do projeto' })
-  @ApiResponse({ status: 200, description: 'Timelines retornadas com sucesso' })
   @Get()
-  getAll(@Param('projectId') projectId: string) {
-    return this.timelinesService.getAll(projectId);
+  @ApiOperation({ summary: 'Get all timelines for a project' })
+  @ApiParam({ name: 'projectId', description: 'Project ID' })
+  @ApiResponse({ status: 200, description: 'Returns all timelines' })
+  async getAll(@Param('projectId') projectId: string, @Req() request: any) {
+    // Extract user permission from request (adjust based on your auth implementation)
+    const permission = request.user?.permission || 'employee';
+    
+    const timelines = await this.timelinesService.getAll(projectId, permission);
+    return timelines;
   }
 
-  @ApiOperation({ summary: 'Criar uma nova timeline' })
-  @ApiParam({ name: 'projectId', description: 'ID do projeto' })
-  @ApiBody({ type: CreateTimelineDto })
-  @ApiResponse({ status: 201, description: 'Timeline criada com sucesso' })
   @Post()
-  create(@Param('projectId') projectId: string, @Body() createTimelineDto: CreateTimelineDto) {
-    return this.timelinesService.create(projectId, createTimelineDto);
+  @ApiOperation({ summary: 'Create a new timeline' })
+  @ApiParam({ name: 'projectId', description: 'Project ID' })
+  @ApiBody({ type: CreateTimelineDto })
+  @ApiResponse({ status: 201, description: 'Timeline created successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid input' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  @UsePipes(new ValidationPipe({ transform: true }))
+  async create(
+    @Param('projectId') projectId: string, 
+    @Body() createTimelineDto: CreateTimelineDto,
+    @Req() request: any
+  ) {
+    // Check permissions (adjust based on your auth implementation)
+    if (request.user?.permission !== 'admin' && request.user?.permission !== 'owner') {
+      throw new ForbiddenException('You do not have the permission to create a timeline');
+    }
+    
+    try {
+      const timeline = await this.timelinesService.create(projectId, createTimelineDto);
+      return processTimelineToReturn(timeline, request.user?.permission || 'employee');
+    } catch (error) {
+      if (error.name === 'ValidationError') {
+        throw new BadRequestException({ code: 'VALIDATION', errors: error.errors });
+      } else if (error.name === 'DurationZeroError') {
+        throw new BadRequestException({ code: 'TASK_DURATION_ZERO', task: error.task });
+      }
+      throw error;
+    }
   }
 
-  @ApiOperation({ summary: 'Obter a timeline mais recente' })
-  @ApiParam({ name: 'projectId', description: 'ID do projeto' })
-  @ApiResponse({ status: 200, description: 'Timeline mais recente retornada com sucesso' })
-  @ApiResponse({ status: 404, description: 'Timeline não encontrada' })
   @Get('latest')
-  getLatest(@Param('projectId') projectId: string) {
-    return this.timelinesService.getLatest(projectId);
+  @ApiOperation({ summary: 'Get the latest timeline for a project' })
+  @ApiParam({ name: 'projectId', description: 'Project ID' })
+  @ApiQuery({ name: 'planned_status', required: false, isArray: true, enum: ['to_start', 'in_progress', 'to_complete'] })
+  @ApiQuery({ name: 'execution_status', required: false, isArray: true, enum: ['planned', 'started', 'completed'] })
+  @ApiQuery({ name: 'overall_status', required: false, isArray: true, enum: ['on_time', 'ahead', 'delayed'] })
+  @ApiQuery({ name: 'start_date', required: false, type: Date })
+  @ApiQuery({ name: 'end_date', required: false, type: Date })
+  @ApiQuery({ name: 'score_on_date', required: false, type: Date })
+  @ApiResponse({ status: 200, description: 'Returns the latest timeline' })
+  @ApiResponse({ status: 404, description: 'Timeline not found' })
+  async getLatest(
+    @Param('projectId') projectId: string,
+    @Query() query: any,
+    @Req() request: any
+  ) {
+    const timeline = await this.timelinesService.getLatest(projectId);
+    
+    if (!timeline) {
+      throw new NotFoundException('Timeline not found');
+    }
+    
+    // Process filters and return timeline
+    // Note: You'll need to implement filter processing in your service
+    const permission = request.user?.permission || 'employee';
+    
+    // Calculate date range
+    let minStartDate = null;
+    let maxEndDate = null;
+    
+    if (timeline.tasks.length > 0) {
+      minStartDate = timeline.tasks.reduce((acc, task) => 
+        task.start_date < acc ? task.start_date : acc, 
+        timeline.tasks[0].start_date
+      );
+      
+      maxEndDate = timeline.tasks.reduce((acc, task) => 
+        task.end_date > acc ? task.end_date : acc, 
+        timeline.tasks[0].end_date
+      );
+    }
+    
+    return {
+      dateRange: {
+        start: minStartDate,
+        end: maxEndDate
+      },
+      timeline: processTimelineToReturn(timeline, permission, query.score_on_date)
+    };
   }
 
-  @ApiOperation({ summary: 'Obter dados do dashboard' })
-  @ApiParam({ name: 'projectId', description: 'ID do projeto' })
-  @ApiResponse({ status: 200, description: 'Dados do dashboard retornados com sucesso' })
-  @ApiResponse({ status: 404, description: 'Dados não encontrados' })
   @Get('dashboard')
-  getDashboard(@Param('projectId') projectId: string) {
+  @ApiOperation({ summary: 'Get dashboard data for a project' })
+  @ApiParam({ name: 'projectId', description: 'Project ID' })
+  @ApiResponse({ status: 200, description: 'Returns dashboard data' })
+  @ApiResponse({ status: 404, description: 'Timeline not found' })
+  async getDashboard(@Param('projectId') projectId: string) {
+    // This is a placeholder - you'll need to implement the dashboard logic in your service
     return this.timelinesService.getDashboard(projectId);
   }
 
-  @ApiOperation({ summary: 'Obter uma timeline específica' })
-  @ApiParam({ name: 'projectId', description: 'ID do projeto' })
-  @ApiParam({ name: 'timelineId', description: 'ID da timeline' })
-  @ApiResponse({ status: 200, description: 'Timeline retornada com sucesso' })
-  @ApiResponse({ status: 404, description: 'Timeline não encontrada' })
   @Get(':timelineId')
-  getOne(@Param('projectId') projectId: string, @Param('timelineId') timelineId: string) {
-    return this.timelinesService.getOne(projectId, timelineId);
+  @ApiOperation({ summary: 'Get a specific timeline' })
+  @ApiParam({ name: 'projectId', description: 'Project ID' })
+  @ApiParam({ name: 'timelineId', description: 'Timeline ID' })
+  @ApiResponse({ status: 200, description: 'Returns the timeline' })
+  @ApiResponse({ status: 404, description: 'Timeline not found' })
+  async getOne(
+    @Param('projectId') projectId: string,
+    @Param('timelineId') timelineId: string,
+    @Req() request: any
+  ) {
+    const timeline = await this.timelinesService.getOne(projectId, timelineId);
+    
+    if (!timeline) {
+      throw new NotFoundException('Timeline not found');
+    }
+    
+    const permission = request.user?.permission || 'employee';
+    return processTimelineToReturn(timeline, permission);
   }
 
-  @ApiOperation({ summary: 'Atualizar uma timeline' })
-  @ApiParam({ name: 'projectId', description: 'ID do projeto' })
-  @ApiParam({ name: 'timelineId', description: 'ID da timeline' })
-  @ApiResponse({ status: 200, description: 'Timeline atualizada com sucesso' })
-  @ApiResponse({ status: 404, description: 'Timeline não encontrada' })
   @Patch(':timelineId')
-  updateTimeline(
+  @ApiOperation({ summary: 'Update a timeline' })
+  @ApiParam({ name: 'projectId', description: 'Project ID' })
+  @ApiParam({ name: 'timelineId', description: 'Timeline ID' })
+  @ApiBody({ type: UpdateTimelineDto })
+  @ApiResponse({ status: 200, description: 'Timeline updated successfully' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  @ApiResponse({ status: 404, description: 'Timeline not found' })
+  @UsePipes(new ValidationPipe({ transform: true }))
+  async updateTimeline(
     @Param('projectId') projectId: string,
     @Param('timelineId') timelineId: string,
-    @Body() updateData: any
+    @Body() updateTimelineDto: UpdateTimelineDto,
+    @Req() request: any
   ) {
-    return this.timelinesService.updateTimeline(projectId, timelineId, updateData);
+    // Check permissions
+    if (request.user?.permission !== 'admin' && request.user?.permission !== 'owner') {
+      throw new ForbiddenException('You do not have the permission to update a timeline');
+    }
+    
+    const timeline = await this.timelinesService.updateTimeline(
+      projectId, 
+      timelineId, 
+      updateTimelineDto
+    );
+    
+    if (!timeline) {
+      throw new NotFoundException('Timeline not found');
+    }
+    
+    const permission = request.user?.permission || 'employee';
+    return processTimelineToReturn(timeline, permission);
   }
 
-  @ApiOperation({ summary: 'Excluir uma timeline' })
-  @ApiParam({ name: 'projectId', description: 'ID do projeto' })
-  @ApiParam({ name: 'timelineId', description: 'ID da timeline' })
-  @ApiResponse({ status: 200, description: 'Timeline excluída com sucesso' })
-  @ApiResponse({ status: 404, description: 'Timeline não encontrada' })
   @Delete(':timelineId')
-  deleteOne(@Param('projectId') projectId: string, @Param('timelineId') timelineId: string) {
-    return this.timelinesService.deleteOne(projectId, timelineId);
-  }
-
-  @ApiOperation({ summary: 'Excluir progresso de uma data específica' })
-  @ApiParam({ name: 'projectId', description: 'ID do projeto' })
-  @ApiParam({ name: 'timelineId', description: 'ID da timeline' })
-  @ApiQuery({ name: 'date', description: 'Data do progresso a ser excluído', example: '2023-01-15' })
-  @ApiResponse({ status: 200, description: 'Progresso excluído com sucesso' })
-  @ApiResponse({ status: 404, description: 'Timeline não encontrada' })
-  @Delete(':timelineId/progress')
-  deleteOneDate(
+  @ApiOperation({ summary: 'Delete a timeline' })
+  @ApiParam({ name: 'projectId', description: 'Project ID' })
+  @ApiParam({ name: 'timelineId', description: 'Timeline ID' })
+  @ApiResponse({ status: 204, description: 'Timeline deleted successfully' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  @ApiResponse({ status: 404, description: 'Timeline not found' })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async deleteOne(
     @Param('projectId') projectId: string,
     @Param('timelineId') timelineId: string,
-    @Query('date') date: string
+    @Req() request: any
   ) {
-    return this.timelinesService.deleteOneDate(projectId, timelineId, date);
+    // Check permissions
+    if (request.user?.permission !== 'owner') {
+      throw new ForbiddenException('You do not have the permission to delete a timeline');
+    }
+    
+    await this.timelinesService.deleteOne(projectId, timelineId);
+    return null;
   }
 
-  @ApiOperation({ summary: 'Atualizar medição de uma tarefa' })
-  @ApiParam({ name: 'projectId', description: 'ID do projeto' })
-  @ApiParam({ name: 'timelineId', description: 'ID da timeline' })
-  @ApiParam({ name: 'taskId', description: 'ID da tarefa' })
-  @ApiResponse({ status: 200, description: 'Medição atualizada com sucesso' })
-  @ApiResponse({ status: 404, description: 'Timeline ou tarefa não encontrada' })
+  @Delete(':timelineId/progress')
+  @ApiOperation({ summary: 'Delete progress for a specific date' })
+  @ApiParam({ name: 'projectId', description: 'Project ID' })
+  @ApiParam({ name: 'timelineId', description: 'Timeline ID' })
+  @ApiBody({ type: DeleteProgressDto })
+  @ApiResponse({ status: 200, description: 'Progress deleted successfully' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  @ApiResponse({ status: 404, description: 'Timeline not found' })
+  @UsePipes(new ValidationPipe({ transform: true }))
+  async deleteOneDate(
+    @Param('projectId') projectId: string,
+    @Param('timelineId') timelineId: string,
+    @Body() deleteProgressDto: DeleteProgressDto,
+    @Req() request: any
+  ) {
+    // Check permissions
+    if (request.user?.permission !== 'admin' && request.user?.permission !== 'owner') {
+      throw new ForbiddenException('You do not have permission to delete progress');
+    }
+    
+    // This is a placeholder - you'll need to implement the delete progress logic in your service
+    // The implementation would be similar to the serverless function
+    return this.timelinesService.deleteOneDate(projectId, timelineId, deleteProgressDto.date);
+  }
+
   @Patch(':timelineId/task/:taskId')
-  updateMeasurement(
+  @ApiOperation({ summary: 'Update a task measurement' })
+  @ApiParam({ name: 'projectId', description: 'Project ID' })
+  @ApiParam({ name: 'timelineId', description: 'Timeline ID' })
+  @ApiParam({ name: 'taskId', description: 'Task ID' })
+  @ApiBody({ type: UpdateMeasurementDto })
+  @ApiResponse({ status: 200, description: 'Task updated successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid input' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  @ApiResponse({ status: 404, description: 'Timeline or task not found' })
+  @UsePipes(new ValidationPipe({ transform: true }))
+  async updateMeasurement(
     @Param('projectId') projectId: string,
     @Param('timelineId') timelineId: string,
     @Param('taskId') taskId: string,
-    @Body() updateData: any
+    @Body() updateMeasurementDto: UpdateMeasurementDto,
+    @Req() request: any
   ) {
-    return this.timelinesService.updateTask(projectId, timelineId, taskId, updateData);
+    // Check permissions
+    if (request.user?.permission !== 'admin' && request.user?.permission !== 'owner') {
+      throw new ForbiddenException('You do not have the permission to update a measurement');
+    }
+    
+    // This is a placeholder - you'll need to implement the update task logic in your service
+    // The implementation would be similar to the serverless function
+    return this.timelinesService.updateTask(projectId, timelineId, taskId, updateMeasurementDto);
   }
 
-  @ApiOperation({ summary: 'Atualizar múltiplas tarefas' })
-  @ApiParam({ name: 'projectId', description: 'ID do projeto' })
-  @ApiParam({ name: 'timelineId', description: 'ID da timeline' })
-  @ApiResponse({ status: 200, description: 'Tarefas atualizadas com sucesso' })
-  @ApiResponse({ status: 404, description: 'Timeline não encontrada' })
   @Patch(':timelineId/task/bulk')
-  bulkUpdateTask(
+  @ApiOperation({ summary: 'Bulk update tasks' })
+  @ApiParam({ name: 'projectId', description: 'Project ID' })
+  @ApiParam({ name: 'timelineId', description: 'Timeline ID' })
+  @ApiBody({ type: [BulkUpdateTaskDto] })
+  @ApiResponse({ status: 200, description: 'Tasks updated successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid input' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  @ApiResponse({ status: 404, description: 'Timeline or task not found' })
+  @UsePipes(new ValidationPipe({ transform: true }))
+  async bulkUpdateTask(
     @Param('projectId') projectId: string,
     @Param('timelineId') timelineId: string,
-    @Body() updates: any[]
+    @Body() bulkUpdateTaskDto: BulkUpdateTaskDto[],
+    @Req() request: any
   ) {
-    return this.timelinesService.bulkUpdateTask(projectId, timelineId, updates);
+    // Check permissions
+    if (request.user?.permission !== 'admin' && request.user?.permission !== 'owner') {
+      throw new ForbiddenException('You do not have the permission to update a measurement');
+    }
+    
+    // This is a placeholder - you'll need to implement the bulk update task logic in your service
+    // The implementation would be similar to the serverless function
+    return this.timelinesService.bulkUpdateTask(projectId, timelineId, bulkUpdateTaskDto);
   }
 } 
