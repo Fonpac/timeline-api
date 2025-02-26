@@ -12,6 +12,7 @@ Esta API permite o gerenciamento completo de timelines de projetos, com suporte 
 - Documentação interativa via Swagger
 - Decoradores personalizados para simplificar a documentação da API
 - CORS habilitado para permitir acesso de qualquer origem
+- Formatação de código padronizada com Prettier
 
 ## Tecnologias
 
@@ -21,6 +22,7 @@ Esta API permite o gerenciamento completo de timelines de projetos, com suporte 
 - **Validação**: class-validator e class-transformer
 - **Ambiente**: Configuração via dotenv
 - **Segurança**: CORS configurado para acesso cross-origin
+- **Formatação**: Prettier com configuração personalizada
 
 ## Instalação
 
@@ -212,6 +214,30 @@ A documentação da API está organizada em vários arquivos:
 - **index.ts**: Exporta todos os componentes de documentação
 
 Esta organização facilita a manutenção da documentação e reduz a duplicação de código.
+
+## Formatação de Código
+
+O projeto utiliza Prettier para manter um estilo de código consistente. A configuração está definida no arquivo `.prettierrc`:
+
+```json
+{
+    "semi": false,
+    "singleQuote": true,
+    "tabWidth": 4,
+    "printWidth": 160,
+    "trailingComma": "es5"
+}
+```
+
+Para formatar o código, execute um dos seguintes comandos:
+
+```bash
+# Formatar apenas arquivos TypeScript no diretório src
+npm run format
+
+# Formatar todos os arquivos do projeto
+npm run format:all
+```
 
 ## Licença
 

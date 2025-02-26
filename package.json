@@ -6,6 +6,7 @@
   "scripts": {
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\"",
+    "format:all": "prettier --write .",
     "start": "nest start",
     "dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
@@ -43,6 +44,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.13.5",
+    "prettier": "^3.2.5",
     "typescript": "^5.7.3"
   }
 }
