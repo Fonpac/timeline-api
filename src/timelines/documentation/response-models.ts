@@ -266,22 +266,21 @@ export class DashboardResponse {
       '2023-01-15': { planned: 0.1, actual: 0.08, original: 0.1 },
       '2023-02-01': { planned: 0.25, actual: 0.22, original: 0.25 }
     },
-    description: 'Progress curves showing planned, actual, and original progress by date',
-    required: false
+    description: 'Progress curves showing planned, actual, and original progress by date'
   })
-  progress_curves?: Record<string, { planned?: number; actual?: number; original?: number }>;
+  progress_curves: Record<string, { planned?: number; actual?: number; original?: number }>;
 
   @ApiProperty({ 
     example: { planned: 10, started: 15, completed: 25 },
     description: 'Count of tasks by execution status'
   })
-  task_execution?: { planned: number; started: number; completed: number };
+  task_execution: { planned: number; started: number; completed: number };
 
   @ApiProperty({ 
     example: { on_time: 30, ahead: 5, delayed: 15 },
     description: 'Count of tasks by date status'
   })
-  task_date_status?: { on_time: number; ahead: number; delayed: number };
+  task_date_status: { on_time: number; ahead: number; delayed: number };
 }
 
 /**

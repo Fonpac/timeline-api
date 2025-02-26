@@ -204,4 +204,91 @@ export function computeOverallStatus(task: any) {
   }
 
   return 'on_time';
+}
+
+/**
+ * Computes the execution status counts for a task
+ */
+export function computeTaskExecution(task: any) {
+  const result = { planned: 0, started: 0, completed: 0 };
+  
+  if (task.executionStatus === 'planned') {
+    result.planned = 1;
+  } else if (task.executionStatus === 'started') {
+    result.started = 1;
+  } else if (task.executionStatus === 'completed') {
+    result.completed = 1;
+  }
+  
+  // Process subtasks if they exist
+  if (task.subtasks && task.subtasks.length > 0) {
+    for (const subtask of task.subtasks) {
+      const subtaskExecution = computeTaskExecution(subtask);
+      result.planned += subtaskExecution.planned;
+      result.started += subtaskExecution.started;
+      result.completed += subtaskExecution.completed;
+    }
+  }
+  
+  return result;
+}
+
+/**
+ * Computes the date status counts for a task
+ */
+export function computeTaskDateStatus(task: any) {
+  const result = { on_time: 0, ahead: 0, delayed: 0 };
+  const status = computeOverallStatus(task);
+  
+  if (status === 'on_time') {
+    result.on_time = 1;
+  } else if (status === 'ahead') {
+    result.ahead = 1;
+  } else if (status === 'delayed') {
+    result.delayed = 1;
+  }
+  
+  // Process subtasks if they exist
+  if (task.subtasks && task.subtasks.length > 0) {
+    for (const subtask of task.subtasks) {
+      const subtaskDateStatus = computeTaskDateStatus(subtask);
+      result.on_time += subtaskDateStatus.on_time;
+      result.ahead += subtaskDateStatus.ahead;
+      result.delayed += subtaskDateStatus.delayed;
+    }
+  }
+  
+  return result;
+}
+
+/**
+ * Gets all days in an interval
+ */
+export function daysOfInterval(
+  start: Date, 
+  end: Date, 
+  includeWeekends: boolean = true,
+  includeEndDate: boolean = true
+): Date[] {
+  const days: Date[] = [];
+  const currentDate = new Date(start);
+  const endDate = new Date(end);
+  
+  // Adjust end date to include it if needed
+  if (includeEndDate) {
+    endDate.setDate(endDate.getDate() + 1);
+  }
+  
+  while (currentDate < endDate) {
+    const dayOfWeek = currentDate.getDay();
+    
+    // Skip weekends if not included
+    if (includeWeekends || (dayOfWeek !== 0 && dayOfWeek !== 6)) {
+      days.push(new Date(currentDate));
+    }
+    
+    currentDate.setDate(currentDate.getDate() + 1);
+  }
+  
+  return days;
 } 

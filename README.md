@@ -11,6 +11,7 @@ Esta API permite o gerenciamento completo de timelines de projetos, com suporte 
 - Histórico de alterações
 - Documentação interativa via Swagger
 - Decoradores personalizados para simplificar a documentação da API
+- CORS habilitado para permitir acesso de qualquer origem
 
 ## Tecnologias
 
@@ -19,6 +20,7 @@ Esta API permite o gerenciamento completo de timelines de projetos, com suporte 
 - **Documentação**: Swagger
 - **Validação**: class-validator e class-transformer
 - **Ambiente**: Configuração via dotenv
+- **Segurança**: CORS configurado para acesso cross-origin
 
 ## Instalação
 
@@ -44,6 +46,21 @@ cp .env.example .env
    ```
    MONGODB_URI="mongodb://localhost:27017/timeline_db"
    ```
+
+## Configuração do CORS
+
+A API está configurada para permitir requisições de qualquer origem (CORS habilitado com wildcard '*'). Isso facilita a integração com aplicações frontend hospedadas em diferentes domínios.
+
+```typescript
+// Configuração em src/main.ts
+app.enableCors({
+  origin: '*',
+  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+  credentials: true,
+});
+```
+
+Para restringir o acesso a domínios específicos, modifique a configuração `origin` para uma lista de domínios permitidos.
 
 ## Executando a aplicação
 

@@ -5,7 +5,12 @@ import { Timeline, ITimeline } from './entities/timeline.schema';
 import { CreateTimelineDto } from './dto/create-timeline.dto';
 import { processTimelineToReturn } from './utils/timeline-processor';
 import { startOfDay } from 'date-fns';
-import { dateToString } from './utils/timeline-processor';
+import { 
+  dateToString, 
+  computeTaskExecution, 
+  computeTaskDateStatus, 
+  daysOfInterval 
+} from './utils/timeline-processor';
 
 @Injectable()
 export class TimelinesService {
@@ -132,14 +137,97 @@ export class TimelinesService {
     const beforeToday = days.filter(day => day < today);
     const afterToday = days.filter(day => day >= today);
 
-    // This is a simplified version - you'll need to implement the full dashboard logic
+    const timelineExecution = timeline.tasks.reduce(
+      (acc, task) => {
+        const taskExecution = computeTaskExecution(task);
+
+        return {
+          planned: acc.planned + taskExecution.planned,
+          started: acc.started + taskExecution.started,
+          completed: acc.completed + taskExecution.completed
+        };
+      },
+      { planned: 0, started: 0, completed: 0 }
+    );
+
+    const timelineDateStatus = timeline.tasks.reduce(
+      (acc, task) => {
+        const taskDateStatus = computeTaskDateStatus(task);
+
+        return {
+          on_time: acc.on_time + taskDateStatus.on_time,
+          ahead: acc.ahead + taskDateStatus.ahead,
+          delayed: acc.delayed + taskDateStatus.delayed
+        };
+      },
+      { on_time: 0, ahead: 0, delayed: 0 }
+    );
+
+    const progressCurves: Record<
+      string,
+      { planned?: number; actual?: number; original?: number }
+    > = {};
+
+    for (const date of Object.keys(timeline.planned_progress)) {
+      progressCurves[date] = {
+        planned: timeline.planned_progress[date],
+        actual: undefined
+      };
+    }
+
+    for (const date of Object.keys(timeline.actual_progress ?? {})) {
+      if (progressCurves[date] === undefined) {
+        progressCurves[date] = {};
+      }
+
+      progressCurves[date].actual =
+        timeline.actual_progress?.[date].progress_percentage;
+    }
+
+    const firstTimeline = await this.timelineModel.findOne({
+      project_id: projectId,
+      _id: { $ne: timeline._id }
+    }).sort({ created_at: 1 });
+
+    if (firstTimeline !== null) {
+      for (const date of Object.keys(firstTimeline.planned_progress)) {
+        if (progressCurves[date] === undefined) {
+          progressCurves[date] = {};
+        }
+
+        progressCurves[date].original = firstTimeline.planned_progress[date];
+      }
+    }
+
+    const existingDays = Object.keys(progressCurves).sort();
+    const firstDay = existingDays[0];
+    const lastDay = existingDays[existingDays.length - 1];
+    
+    if (firstDay && lastDay) {
+      const allDays = daysOfInterval(
+        new Date(firstDay),
+        new Date(lastDay),
+        true,
+        true
+      ).map(dateToString);
+
+      for (const day of allDays) {
+        if (progressCurves[day] === undefined) {
+          progressCurves[day] = { planned: undefined, actual: undefined };
+        }
+      }
+    }
+
     return {
       start_date: minStartDate,
       end_date: maxEndDate,
       today: startOfDay(new Date()).toISOString(),
       total_days: days.length,
       elapsed_days: beforeToday.length,
-      remaining_days: afterToday.length
+      remaining_days: afterToday.length,
+      progress_curves: progressCurves,
+      task_execution: timelineExecution,
+      task_date_status: timelineDateStatus
     };
   }
 
