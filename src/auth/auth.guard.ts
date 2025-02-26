@@ -42,7 +42,7 @@ export class AuthGuard implements CanActivate {
             const decoded = await this.decodeAuthToken(token)
 
             const contextData: ContextData = {
-                userId: decoded.id.toString(),\
+                userId: decoded.id.toString(),
             }
 
             // Extract projectId from request params
